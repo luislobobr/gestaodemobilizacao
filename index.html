@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Mobilização de Empresas v2.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      // IMPORTANTE: COLE O SEU ID DE MÉTRICA DO GOOGLE ANALYTICS AQUI
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    
+    <style>
+        :root {
+            --bg-primary: #f1f5f9; /* slate-100 */
+            --bg-secondary: #ffffff; /* white */
+            --bg-accent: #eef2ff; /* indigo-50 */
+            --text-primary: #0f172a; /* slate-900 */
+            --text-secondary: #475569; /* slate-600 */
+            --border-color: #e2e8f0; /* slate-200 */
+            --accent-color: #4338ca; /* indigo-700 */
+            --accent-hover: #3730a3; /* indigo-800 */
+        }
+        html.dark {
+            --bg-primary: #020617; /* slate-950 */
+            --bg-secondary: #0f172a; /* slate-900 */
+            --bg-accent: #1e293b; /* slate-800 */
+            --text-primary: #f8fafc; /* slate-50 */
+            --text-secondary: #94a3b8; /* slate-400 */
+            --border-color: #334155; /* slate-700 */
+            --accent-color: #6366f1; /* indigo-500 */
+            --accent-hover: #4f46e5; /* indigo-600 */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .modal-backdrop {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background-color: var(--bg-secondary);
+            padding: 2rem; border-radius: 0.75rem; max-width: 90%; width: 500px;
+            border: 1px solid var(--border-color);
+        }
+        .document-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;
+        }
+        .loader {
+            border: 4px solid var(--border-color); border-top: 4px solid var(--accent-color);
+            border-radius: 50%; width: 40px; height: 40px;
+            animation: spin 1s linear infinite; margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .approved-card {
+            background-color: #f0fdf4; border-left-color: #22c55e;
+        }
+        html.dark .approved-card {
+            background-color: #162a22; border-left-color: #22c55e;
+        }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #app-container, #report-content, #report-content * { visibility: visible; }
+            #report-content { position: absolute; left: 0; top: 0; width: 100%; }
+            .report-company-card { border: 1px solid #ccc !important; box-shadow: none !important; page-break-inside: avoid; }
+            .report-header, .generate-manual-message-btn, .generate-ai-message-btn, .generate-approval-message-btn, .select-all-checkbox, .report-item-checkbox, label[for^="company-filter"], #main-section > .border-b, header, footer, aside { display: none !important; }
+        }
+    </style>
+</head>
+
+<body class="transition-colors duration-300">
+
+    <div id="app-container" class="max-w-screen-2xl mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- ESTRUTURA ALTERADA: Layout com menu lateral -->
+        <div class="flex flex-col md:flex-row md:space-x-8">
+
+            <!-- INÍCIO DO MENU LATERAL (ASIDE) -->
+            <aside class="w-full md:w-64 flex-shrink-0 mb-8 md:mb-0">
+                <header class="mb-8 flex justify-between items-start">
+                    <div class="flex items-center space-x-4">
+                        <img src="https://seeklogo.com/images/V/vinci-highways-logo-EE842D3B33-seeklogo.com.png" alt="[Logo da VINCI Highways]" class="h-10" onerror="this.style.display='none'">
+                    </div>
+                </header>
+                <nav id="main-nav" class="flex flex-col space-y-2">
+                    <!-- Dashboard -->
+                    <button id="tab-btn-dashboard" class="tab-btn flex items-center w-full text-left p-3 rounded-lg font-medium text-sm bg-[--bg-accent] text-[--accent-color]">
+                        <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h7.5" /></svg>
+                        Dashboard
+                    </button>
+                    <!-- Cadastro -->
+                    <button id="tab-btn-cadastro" class="tab-btn flex items-center w-full text-left p-3 rounded-lg font-medium text-sm text-[--text-secondary] hover:bg-[--bg-accent] hover:text-[--text-primary]">
+                        <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Cadastro
+                    </button>
+                    <!-- Importar -->
+                    <button id="tab-btn-importar" class="tab-btn flex items-center w-full text-left p-3 rounded-lg font-medium text-sm text-[--text-secondary] hover:bg-[--bg-accent] hover:text-[--text-primary]">
+                        <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
+                        Importar
+                    </button>
+                    <!-- Gerenciar -->
+                    <button id="tab-btn-empresas" class="tab-btn flex items-center w-full text-left p-3 rounded-lg font-medium text-sm text-[--text-secondary] hover:bg-[--bg-accent] hover:text-[--text-primary]">
+                        <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>
+                        Gerenciar
+                    </button>
+                    <!-- Aprovados -->
+                    <button id="tab-btn-aprovados" class="tab-btn flex items-center w-full text-left p-3 rounded-lg font-medium text-sm text-[--text-secondary] hover:bg-[--bg-accent] hover:text-[--text-primary]">
+                        <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Aprovados
+                    </button>
+                    <!-- Análise BI -->
+                    <button id="tab-btn-bi" class="tab-btn flex items-center w-full text-left p-3 rounded-lg font-medium text-sm text-[--text-secondary] hover:bg-[--bg-accent] hover:text-[--text-primary]">
+                        <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 1.5m1-1.5l1 1.5m0 0l.5 1.5m.5-1.5h.5M6 16.5h2.25m0 0l1-1.5m-1 1.5l-1-1.5m0 0l-.5-1.5m-.5 1.5h-.5" /></svg>
+                        Análise BI
+                    </button>
+                    <!-- Relatórios -->
+                    <button id="tab-btn-relatorio" class="tab-btn flex items-center w-full text-left p-3 rounded-lg font-medium text-sm text-[--text-secondary] hover:bg-[--bg-accent] hover:text-[--text-primary]">
+                        <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                        Relatórios
+                    </button>
+                </nav>
+            </aside>
+            <!-- FIM DO MENU LATERAL -->
+
+            <!-- INÍCIO DO CONTEÚDO PRINCIPAL -->
+            <main class="flex-1">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                         <h1 class="text-3xl font-bold text-[--text-primary]">Gestão de Mobilização</h1>
+                         <p class="text-[--text-secondary] mt-1">Análise de documentação de empresas e colaboradores.</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                         <button id="theme-toggle" class="p-2 rounded-full bg-[--bg-secondary] border border-[--border-color] text-[--text-secondary] hover:bg-slate-200 dark:hover:bg-slate-700">
+                             <svg class="h-5 w-5 block dark:hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
+                             <svg class="h-5 w-5 hidden dark:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
+                         </button>
+                         <div id="presence-counter-container" class="flex items-center space-x-2 text-sm text-green-700 bg-green-100 px-3 py-1 rounded-full">
+                             <span class="relative flex h-3 w-3">
+                                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                 <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                             </span>
+                             <span id="online-counter" class="font-semibold">1</span>
+                             <span>Online</span>
+                         </div>
+                    </div>
+                </div>
+
+                <div id="main-section">
+                    <div class="mt-6">
+                        <div id="tab-panel-dashboard" class="tab-panel">
+                            <div class="flex justify-between items-center mb-4">
+                               <h2 class="text-xl font-semibold text-[--text-primary]">Visão Geral das Empresas</h2>
+                               <div class="flex items-center">
+                                   <input type="checkbox" id="hide-approved-toggle" class="h-4 w-4 rounded border-gray-300 text-[--accent-color] focus:ring-[--accent-color]">
+                                   <label for="hide-approved-toggle" class="ml-2 block text-sm text-[--text-secondary]">Ocultar empresas 100% aprovadas</label>
+                               </div>
+                            </div>
+                            <div id="dashboard-report" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"><div class="loader"></div></div>
+                        </div>
+                        <div id="tab-panel-cadastro" class="tab-panel hidden"><div class="bg-[--bg-secondary] p-6 rounded-lg shadow-md border border-[--border-color]"><h2 class="text-xl font-semibold mb-4">Cadastrar Nova Empresa</h2><form id="add-company-form" class="space-y-4"><div><label for="contractNumber" class="block text-sm font-medium text-[--text-secondary]">Número do Contrato</label><input type="text" id="contractNumber" required class="mt-1 block w-full px-3 py-2 bg-[--bg-primary] border border-[--border-color] rounded-md shadow-sm focus:outline-none focus:ring-[--accent-color] focus:border-[--accent-color] sm:text-sm"></div><div><label for="companyName" class="block text-sm font-medium text-[--text-secondary]">Nome da Empresa</label><input type="text" id="companyName" required class="mt-1 block w-full px-3 py-2 bg-[--bg-primary] border border-[--border-color] rounded-md shadow-sm focus:outline-none focus:ring-[--accent-color] focus:border-[--accent-color] sm:text-sm"></div><button type="submit" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[--accent-color] hover:bg-[--accent-hover] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--accent-hover]">Salvar Empresa</button></form></div></div>
+                        <div id="tab-panel-importar" class="tab-panel hidden"><div class="bg-[--bg-secondary] p-6 rounded-lg shadow-md border border-[--border-color]"><h2 class="text-xl font-semibold mb-4">Importar Dados de Planilhas</h2><p class="text-sm text-[--text-secondary] mb-4">Selecione um ou mais arquivos (.csv, .xlsx, .xls) preenchidos a partir do modelo padrão. O sistema fará a leitura e exibirá os dados para sua verificação antes da importação final.</p><div class="mt-4 flex items-center space-x-4"><input type="file" id="file-input" multiple accept=".csv,.xlsx,.xls" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-slate-700 dark:file:text-slate-300 dark:hover:file:bg-slate-600"/><button id="export-template-btn" class="flex-shrink-0 inline-flex items-center px-4 py-2 border border-[--border-color] shadow-sm text-sm font-medium rounded-md text-[--text-secondary] bg-[--bg-secondary] hover:bg-slate-50 dark:hover:bg-slate-800"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 9.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 7.414V13a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>Baixar Modelo</button></div><div id="import-preview-area" class="mt-6 space-y-6"></div><div id="import-actions" class="mt-6 pt-4 border-t border-[--border-color] hidden"><button id="import-final-btn" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-700 hover:bg-green-800">Importar Dados Verificados</button></div></div></div>
+                        <div id="tab-panel-empresas" class="tab-panel hidden"><div><h2 class="text-xl font-semibold mb-4">Empresas Cadastradas</h2><div id="company-list" class="space-y-4"><div class="loader"></div></div></div></div>
+                        <div id="tab-panel-aprovados" class="tab-panel hidden"><div class="bg-[--bg-secondary] p-6 rounded-lg shadow-md border border-[--border-color]"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-semibold">Colaboradores Aprovados</h2><div class="flex space-x-2"><button id="generate-approved-message-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">Enviar Mensagem</button><button id="export-approved-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">Exportar Aprovados (.csv)</button></div></div><div id="approved-list" class="space-y-4"><div class="loader"></div></div></div></div>
+                        <div id="tab-panel-bi" class="tab-panel hidden"><div class="bg-[--bg-secondary] p-6 rounded-lg shadow-md border border-[--border-color]"><h2 class="text-xl font-semibold mb-4">Principais Documentos com Pendências</h2><div class="relative h-96"><canvas id="bi-chart"></canvas></div></div></div>
+                        <div id="tab-panel-relatorio" class="tab-panel hidden">
+                            <div class="bg-[--bg-secondary] p-6 rounded-lg shadow-md border border-[--border-color]">
+                                <div class="report-header mb-6">
+                                    <div class="flex flex-col sm:flex-row justify-between sm:items-center">
+                                        <div>
+                                            <h2 class="text-xl font-semibold">Relatório de Status de Mobilização</h2>
+                                            <p class="text-sm text-[--text-secondary] mt-1">Filtre por empresa e gere mensagens de status.</p>
+                                        </div>
+                                        <div class="flex items-center space-x-2 mt-4 sm:mt-0">
+                                            <button id="generate-all-summary-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[--accent-color] hover:bg-[--accent-hover]">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                                                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                                                </svg>
+                                                Gerar Resumo Geral
+                                            </button>
+                                            <button id="export-report-btn" class="inline-flex items-center px-4 py-2 border border-[--border-color] text-sm font-medium rounded-md shadow-sm text-[--text-secondary] bg-[--bg-secondary] hover:bg-slate-50 dark:hover:bg-slate-800"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>Exportar CSV</button>
+                                            <button id="print-report-btn" class="inline-flex items-center px-4 py-2 border border-[--border-color] text-sm font-medium rounded-md shadow-sm text-[--text-secondary] bg-[--bg-secondary] hover:bg-slate-50 dark:hover:bg-slate-800"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v-2a1 1 0 011-1h8a1 1 0 011 1v2h1a2 2 0 002-2v-3a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd" /></svg>Imprimir</button>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6 flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0 p-4 bg-[--bg-accent] rounded-lg">
+                                        <div class="flex-1">
+                                            <label for="company-filter" class="block text-sm font-medium text-[--text-secondary]">Filtrar por Empresa</label>
+                                            <select id="company-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-[--border-color] focus:outline-none focus:ring-[--accent-color] focus:border-[--accent-color] sm:text-sm rounded-md bg-[--bg-secondary]">
+                                                <option value="all">Todas as Empresas</option>
+                                            </select>
+                                        </div>
+                                        <div id="report-summary" class="flex-1 grid grid-cols-3 gap-4 text-center"></div>
+                                    </div>
+                                </div>
+                                <div id="report-content" class="space-y-6"><div class="loader"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="mobilization-batch-section" class="hidden"><button id="back-to-dashboard-from-batch" class="mb-6 inline-flex items-center px-4 py-2 border border-[--border-color] shadow-sm text-sm font-medium rounded-md text-[--text-secondary] bg-[--bg-secondary] hover:bg-slate-50 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--accent-color]">&larr; Voltar para Dashboard</button><div class="flex justify-between items-center mb-6"><div><h2 class="text-2xl font-bold mb-1">Lotes de Mobilização: <span id="batch-company-name" class="text-[--accent-color]"></span></h2><p class="text-[--text-secondary]">Contrato: <span id="batch-company-contract"></span></p></div><button id="add-batch-btn" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[--accent-color] hover:bg-[--accent-hover]">+ Criar Novo Lote</button></div><div id="mobilization-batch-list" class="space-y-4"><div class="loader"></div></div></div>
+                <div id="mobilization-list-section" class="hidden"><button id="back-to-batches" class="mb-6 inline-flex items-center px-4 py-2 border border-[--border-color] shadow-sm text-sm font-medium rounded-md text-[--text-secondary] bg-[--bg-secondary] hover:bg-slate-50 dark:hover:bg-slate-800">&larr; Voltar para Lotes</button><h2 class="text-2xl font-bold mb-1">Detalhes do Lote: <span id="list-batch-date" class="text-[--accent-color]"></span></h2><p class="text-[--text-secondary] mb-6" id="list-batch-description"></p><div id="add-mobilization-form-container" class="bg-[--bg-secondary] p-6 rounded-lg shadow-md border border-[--border-color]"><h3 class="text-xl font-semibold mb-4">Adicionar Novo Colaborador</h3><form id="add-mobilization-form" class="space-y-4"><div id="collaborator-name-field"><label for="collaboratorName" class="block text-sm font-medium text-[--text-secondary]">Nome do Colaborador</label><input type="text" id="collaboratorName" class="mt-1 block w-full px-3 py-2 bg-[--bg-primary] border border-[--border-color] rounded-md shadow-sm"></div><div><h4 class="text-md font-medium text-[--text-primary] mb-2 mt-4">Documentos</h4><div id="document-list-container" class="p-4 border rounded-md bg-[--bg-primary] border-[--border-color]"></div></div><button type="submit" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[--accent-color] hover:bg-[--accent-hover]">Salvar Colaborador</button></form></div><div class="mt-8"><h3 class="text-xl font-semibold mb-4">Mobilizações Registradas neste Lote</h3><div id="mobilization-list" class="space-y-4"><div class="loader"></div></div></div></div>
+                <div id="edit-mobilization-section" class="hidden"><button id="back-to-list-from-edit" class="mb-6 inline-flex items-center px-4 py-2 border border-[--border-color] shadow-sm text-sm font-medium rounded-md text-[--text-secondary] bg-[--bg-secondary] hover:bg-slate-50 dark:hover:bg-slate-800">&larr; Voltar para Lote</button><div class="bg-[--bg-secondary] p-6 rounded-lg shadow-md border border-[--border-color]"><h2 class="text-2xl font-bold mb-1">Editar Documentos</h2><p id="edit-mobilization-name" class="text-[--text-secondary]"></p><form id="edit-mobilization-form" class="mt-6"><div><h4 class="text-md font-medium text-[--text-primary] mb-2 mt-4">Documentos</h4><div id="edit-document-list" class="p-4 border rounded-md bg-[--bg-primary] border-[--border-color]"></div></div><button type="submit" class="mt-8 w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[--accent-color] hover:bg-[--accent-hover]">Salvar Alterações</button></form></div></div>
+                <div id="analysis-detail-section" class="hidden"><button id="back-to-mobilizations" class="mb-6 inline-flex items-center px-4 py-2 border border-[--border-color] shadow-sm text-sm font-medium rounded-md text-[--text-secondary] bg-[--bg-secondary] hover:bg-slate-50 dark:hover:bg-slate-800">&larr; Voltar</button><div class="bg-[--bg-secondary] p-6 rounded-lg shadow-md border border-[--border-color]"><h2 class="text-2xl font-bold mb-1">Análise de Documentos</h2><p id="analysis-mobilization-name" class="text-[--text-secondary]"></p><p class="text-sm text-blue-600 dark:text-blue-400 font-semibold mt-2">Previsão de Análise: <span id="analysis-forecast-date"></span></p><form id="analysis-form" class="mt-6"><div id="analysis-document-list" class="space-y-6"></div><button type="submit" class="mt-8 w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">Salvar Alterações da Análise</button></form></div></div>
+                
+                <footer class="text-center text-sm text-[--text-secondary] mt-12 pb-4">
+                    <p id="app-version">Versão 2.0.2 (2025-09-30)</p>
+                </footer>
+            </main>
+            <!-- FIM DO CONTEÚDO PRINCIPAL -->
+        </div>
+    </div>
+
+    <div id="add-batch-modal" class="modal-backdrop hidden"><div class="modal-content"><h3 class="text-lg font-medium leading-6 text-[--text-primary]">Criar Novo Lote de Mobilização</h3><form id="add-batch-form" class="mt-4 space-y-4"><div><label for="batchDate" class="block text-sm font-medium text-[--text-secondary]">Data da Mobilização</label><input type="date" id="batchDate" required class="mt-1 block w-full px-3 py-2 bg-[--bg-primary] border border-[--border-color] rounded-md"></div><div><label for="batchDescription" class="block text-sm font-medium text-[--text-secondary]">Descrição (Ex: Equipe de Montagem)</label><input type="text" id="batchDescription" class="mt-1 block w-full px-3 py-2 bg-[--bg-primary] border border-[--border-color] rounded-md"></div><div><label class="block text-sm font-medium text-[--text-secondary]">Tipo de Lote</label><div class="mt-2 space-y-2"><div class="flex items-center"><input id="batch-type-collaborators" name="batchType" type="radio" value="collaborators" checked class="h-4 w-4 text-[--accent-color] border-[--border-color]"><label for="batch-type-collaborators" class="ml-3 block text-sm font-medium text-[--text-secondary]">Para Colaboradores</label></div><div class="flex items-center"><input id="batch-type-company" name="batchType" type="radio" value="company" class="h-4 w-4 text-[--accent-color] border-[--border-color]"><label for="batch-type-company" class="ml-3 block text-sm font-medium text-[--text-secondary]">Para Documentos da Empresa</label></div></div></div><div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense"><button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[--accent-color] text-base font-medium text-white hover:bg-[--accent-hover] sm:col-start-2">Criar</button><button type="button" id="cancel-batch-btn" class="mt-3 w-full inline-flex justify-center rounded-md border border-[--border-color] shadow-sm px-4 py-2 bg-[--bg-secondary] text-base font-medium text-[--text-primary] hover:bg-slate-50 dark:hover:bg-slate-800 sm:mt-0 sm:col-start-1">Cancelar</button></div></form></div></div>
+    <div id="confirmation-modal" class="modal-backdrop hidden"><div class="modal-content text-center"><h3 class="text-lg font-medium leading-6 text-[--text-primary]" id="modal-title">Confirmar Exclusão</h3><div class="mt-2"><p class="text-sm text-[--text-secondary]" id="modal-body"></p></div><div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense"><button id="confirm-delete-btn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700">Excluir</button><button id="cancel-delete-btn" class="mt-3 w-full inline-flex justify-center rounded-md border border-[--border-color] shadow-sm px-4 py-2 bg-[--bg-secondary] text-base font-medium text-[--text-primary] hover:bg-slate-50 dark:hover:bg-slate-800 sm:mt-0 sm:col-start-1">Cancelar</button></div></div></div>
+    <div id="message-modal" class="modal-backdrop hidden"><div class="modal-content"><h3 class="text-lg font-medium leading-6 text-[--text-primary]">Mensagem para Copiar ou Enviar</h3><div class="mt-4"><textarea id="generated-message-textarea" class="w-full h-64 p-2 border border-[--border-color] rounded-md bg-[--bg-primary] text-[--text-primary]"></textarea></div><div class="mt-5 sm:mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3"><button type="button" id="close-message-btn" class="w-full inline-flex justify-center rounded-md border border-[--border-color] shadow-sm px-4 py-2 bg-[--bg-secondary] text-base font-medium text-[--text-primary] hover:bg-slate-50 dark:hover:bg-slate-800">Fechar</button><button type="button" id="copy-message-btn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[--accent-color] text-base font-medium text-white hover:bg-[--accent-hover]">Copiar</button><button type="button" id="share-whatsapp-btn" class="w-full inline-flex items-center justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.894 11.892-1.99 0-3.903-.52-5.687-1.475L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.886-.001 2.269.655 4.498 1.858 6.354l-.224 1.362 1.387-.221z"/></svg>WhatsApp</button></div></div></div>
+    <div id="toast-modal" class="hidden fixed bottom-5 right-5 bg-gray-800 text-white py-3 px-5 rounded-lg shadow-lg"><p id="toast-message"></p></div>
+
+    <script type="module">
+        // ATUALIZAÇÃO: Versão do Firebase JS SDK atualizada para 10.12.2 para melhor performance e segurança.
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, addDoc, deleteDoc, updateDoc, query, where, onSnapshot, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getDatabase, ref, onValue, set, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBTC6BZiR9hZDrEjO6RpLPLGtC0SS7Gdg",
+            authDomain: "gestao-mobilizacao.firebaseapp.com",
+            projectId: "gestao-mobilizacao",
+            storageBucket: "gestao-mobilizacao.appspot.com", // Corrigido para o domínio correto
+            messagingSenderId: "727503039032",
+            appId: "1:727503039032:web:60e51d0131ac3e02ae14cd"
+        };
+        
+        let app, db, rtdb;
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            rtdb = getDatabase(app);
+        } catch (error) {
+            console.error("Erro na configuração do Firebase:", error);
+            document.getElementById('app-container').innerHTML = `<h2 class="text-2xl text-red-600 font-bold text-center">CONFIGURAÇÃO NECESSÁRIA</h2><p class="text-center mt-4">As credenciais do Firebase parecem estar incorretas ou ausentes. Por favor, edite o arquivo HTML, cole suas credenciais na variável 'firebaseConfig' e recarregue a página.</p>`;
+        }
+
+        let currentCompanyId = null, currentCompanyName = null, currentCompanyContract = null, currentBatchId = null, currentMobilizationId = null;
+        let itemToDelete = { type: null, id: null, parentId: null };
+        let unsubscribeCompanies = null, unsubscribeMobilizationBatches = null, unsubscribeMobilizations = null;
+        let parsedDataForImport = [], allCompaniesCache = [], awaitingAnalysisCache = {};
+        let biChart = null;
+
+        const companyDocsList = ['PCMSO', 'PGR', 'SESMT-NR04'];
+        const collaboratorDocsList = ['RG+CPF', 'CTPS ou E-Social', 'CNH', 'ASO', 'Ordem de Serviço', 'NR 11', 'NR 10', 'NR 06', 'NR 12', 'NR 34', 'NR 35', 'FICHA DE EPI', 'NR 18', 'NR 33', 'NR 20', 'CPE', 'APH', 'INTEGRAÇÃO', 'SINALIZAÇÃO'];
+        
+        let allSections, companyListEl, mobilizationListEl, mobilizationBatchListEl, confirmationModal, confirmDeleteBtn, cancelDeleteBtn, addBatchModal, messageModal, reportContentEl, dashboardReportEl, fileInput, importPreviewArea, importActions, importFinalBtn, exportTemplateBtn, approvedListEl, exportApprovedBtn, themeToggle;
+
+        function showToast(message, type = 'success') { const toastModal = document.getElementById('toast-modal'); const toastMessage = document.getElementById('toast-message'); toastMessage.textContent = message; toastModal.classList.remove('hidden', 'bg-red-600', 'bg-gray-800'); toastModal.classList.add(type === 'error' ? 'bg-red-600' : 'bg-gray-800'); setTimeout(() => toastModal.classList.add('hidden'), 3000); }
+        function formatDate(dateString) { if (!dateString) return ''; const [year, month, day] = dateString.split('-'); return `${day}/${month}/${year}`; }
+        function formatImportDate(dateValue) { if (!dateValue || typeof dateValue === 'string' && dateValue.toLowerCase().includes('n/a')) return 'N/A'; let date; if (typeof dateValue === 'number') { date = new Date(Math.round((dateValue - 25569) * 86400 * 1000)); } else if (typeof dateValue === 'string') { const cleanedDate = dateValue.trim(); const parts = cleanedDate.split(/[/-]/); if (parts.length !== 3) return 'N/A'; if (parts[0].length === 4) { date = new Date(parts[0], parseInt(parts[1],10) - 1, parts[2]); } else if (parts[2].length === 4) { date = new Date(parts[2], parseInt(parts[1],10) - 1, parts[0]); } else { return 'N/A'; } } else if (dateValue instanceof Date) { date = dateValue; } else { return 'N/A'; } if (isNaN(date.getTime())) return 'N/A'; const day = String(date.getDate()).padStart(2, '0'); const month = String(date.getMonth() + 1).padStart(2, '0'); const year = date.getFullYear(); return `${day}/${month}/${year}`; }
+        function calculateForecastDate(dates) { const validDates = dates.map(dateStr => { if (!dateStr || ['n/a', 'na'].includes(dateStr.toLowerCase())) return null; const parts = dateStr.split('/'); if (parts.length !== 3) return null; const d = new Date(parts[2], parseInt(parts[1], 10) - 1, parts[0]); return isNaN(d) ? null : d; }).filter(Boolean); if (validDates.length === 0) return 'N/A'; const lastDate = new Date(Math.max(...validDates)); let businessDays = 2; let forecastDate = new Date(lastDate); while (businessDays > 0) { forecastDate.setDate(forecastDate.getDate() + 1); if (forecastDate.getDay() % 6 !== 0) businessDays--; } return forecastDate.toLocaleDateString('pt-BR'); }
+        function calculateReanalysisDate() { let businessDays = 2, forecastDate = new Date(); while (businessDays > 0) { forecastDate.setDate(forecastDate.getDate() + 1); if (forecastDate.getDay() % 6 !== 0) businessDays--; } return forecastDate.toLocaleDateString('pt-BR'); }
+        function getStatusColorClass(status) { switch (status) { case 'approved': return 'border-green-500'; case 'rejected': return 'border-red-500'; default: return 'border-yellow-500'; } }
+        async function fetchAllData() { const companiesQuery = query(collection(db, "companies")); const companiesSnapshot = await getDocs(companiesQuery); const allCompanies = companiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); const batchesQuery = query(collection(db, "mobilizationBatches")); const batchesSnapshot = await getDocs(batchesQuery); const allBatches = batchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); const mobilizationsQuery = query(collection(db, "mobilizations")); const mobSnapshot = await getDocs(mobilizationsQuery); const allMobilizations = mobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); allCompaniesCache = allCompanies.sort((a,b) => a.name.localeCompare(b.name)); return { allCompanies, allBatches, allMobilizations }; }
+        function switchView(view) { Object.values(allSections).forEach(s => s.classList.add('hidden')); allSections[view].classList.remove('hidden'); }
+        function handleTabClick(targetId) { 
+            switchView('main');
+            document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.remove('bg-[--bg-accent]', 'text-[--accent-color]'); btn.classList.add('text-[--text-secondary]', 'hover:bg-[--bg-accent]', 'hover:text-[--text-primary]'); }); document.getElementById(`tab-btn-${targetId}`).classList.add('bg-[--bg-accent]', 'text-[--accent-color]'); document.getElementById(`tab-btn-${targetId}`).classList.remove('text-[--text-secondary]'); document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.add('hidden')); document.getElementById(`tab-panel-${targetId}`).classList.remove('hidden'); if (unsubscribeCompanies) unsubscribeCompanies(); if (unsubscribeMobilizationBatches) unsubscribeMobilizationBatches(); if (unsubscribeMobilizations) unsubscribeMobilizations(); if (targetId === 'empresas') listenForCompanies(); if (targetId === 'relatorio') renderPendingReport(); if (targetId === 'dashboard') renderDashboardReport(); if (targetId === 'aprovados') renderApprovedList(); if (targetId === 'bi') { renderBiChart(); } 
+        }
+        
+        function renderCompanies(companies) {
+            companyListEl.innerHTML = '';
+            if (!companies || companies.length === 0) {
+                companyListEl.innerHTML = '<p class="text-[--text-secondary]">Nenhuma empresa cadastrada.</p>';
+                return;
+            }
+            companies.forEach(company => {
+                const div = document.createElement('div');
+                div.className = 'bg-[--bg-secondary] p-4 rounded-lg shadow-sm border border-[--border-color] flex justify-between items-center';
+                div.innerHTML = `<div><p class="font-semibold text-lg">${company.name}</p><p class="text-sm text-[--text-secondary]">Contrato: ${company.contractNumber}</p></div>
+                                <div>
+                                    <button data-id="${company.id}" data-name="${company.name}" data-contract="${company.contractNumber}" class="view-batches-btn bg-[--accent-color] text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-[--accent-hover]">Ver Lotes</button>
+                                    <button data-id="${company.id}" class="delete-company-btn text-red-500 p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50 ml-2"><svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button>
+                                </div>`;
+                companyListEl.appendChild(div);
+            });
+        }
+        
+        function renderMobilizationBatches(batches) {
+            mobilizationBatchListEl.innerHTML = '';
+             if (!batches || batches.length === 0) {
+                 mobilizationBatchListEl.innerHTML = '<p class="text-[--text-secondary]">Nenhum lote de mobilização criado para esta empresa.</p>';
+                 return;
+             }
+            batches.forEach(batch => {
+                const card = document.createElement('div');
+                card.className = 'bg-[--bg-secondary] p-4 rounded-lg shadow-sm border border-[--border-color] flex justify-between items-center';
+                const isCompanyType = batch.type === 'company';
+                card.innerHTML = `<div><p class="font-semibold text-lg">${formatDate(batch.date)} - <span class="font-normal">${batch.description || 'Sem descrição'}</span></p><p class="text-sm text-[--text-secondary]">${isCompanyType ? 'Documentos da Empresa' : `Contém ${batch.mobilizationCount || 0} colaborador(es)`}</p></div><div><button data-id="${batch.id}" data-date="${formatDate(batch.date)}" data-description="${batch.description}" data-type="${batch.type}" class="view-mobilizations-btn bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-blue-800">Ver</button><button data-id="${batch.id}" class="delete-batch-btn text-red-500 p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50 ml-2"><svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button></div>`;
+                mobilizationBatchListEl.appendChild(card);
+            });
+        }
+
+        function renderMobilizations(mobilizations) {
+             mobilizationListEl.innerHTML = '';
+            if (!mobilizations || mobilizations.length === 0) {
+                mobilizationListEl.innerHTML = '<p class="text-[--text-secondary]">Nenhuma mobilização registrada neste lote.</p>';
+                return;
+            }
+            mobilizations.sort((a, b) => a.name.localeCompare(b.name));
+            mobilizations.forEach(mob => {
+                const relevantDocs = Object.values(mob.documents).filter(d => d.initialDate && d.initialDate.toLowerCase() !== 'n/a');
+                const approvedCount = relevantDocs.filter(d => d.status === 'approved').length;
+                const totalApplicableDocs = relevantDocs.length;
+                const isFullyApproved = totalApplicableDocs > 0 && approvedCount === totalApplicableDocs;
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-lg shadow-sm border-l-4 ${isFullyApproved ? 'approved-card' : 'bg-[--bg-secondary] border-[--border-color]'} ${mob.status === 'inactive' ? 'opacity-60 bg-slate-100 dark:bg-slate-800' : ''}`;
+                card.innerHTML = `<div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="font-semibold text-lg">${mob.name}</p>
+                                        <p class="text-sm text-[--text-secondary]">Previsão: ${mob.analysisForecastDate}</p>
+                                        <p class="text-sm font-medium ${isFullyApproved ? 'text-green-600' : 'text-yellow-600'}">${approvedCount} de ${totalApplicableDocs} aprovados</p>
+                                    </div>
+                                    <div class="flex items-center space-x-4">
+                                        ${mob.type === 'collaborator' ? `
+                                        <div class="flex items-center">
+                                            <input type="checkbox" id="inactive-toggle-${mob.id}" data-id="${mob.id}" class="deactivate-collaborator-checkbox h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500" ${mob.status === 'inactive' ? 'checked' : ''}>
+                                            <label for="inactive-toggle-${mob.id}" class="ml-2 block text-sm text-amber-700 dark:text-amber-500">Inativo</label>
+                                        </div>` : ''}
+                                        <div class="flex items-center space-x-2">
+                                            <button data-id="${mob.id}" class="edit-mobilization-btn bg-yellow-500 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-yellow-600">Editar</button>
+                                            <button data-id="${mob.id}" class="analyze-mobilization-btn bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-blue-800">Analisar</button>
+                                            <button data-id="${mob.id}" class="delete-mobilization-btn text-red-500 p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50"><svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button>
+                                        </div>
+                                    </div>
+                                  </div>`;
+                mobilizationListEl.appendChild(card);
+            });
+        }
+
+        async function renderEditMobilizationView(mobilizationId) {
+            try {
+                const q = query(collection(db, "mobilizations"), where("__name__", "==", mobilizationId));
+                const mobDoc = (await getDocs(q)).docs[0];
+                if (!mobDoc) { showToast("Mobilização não encontrada.", "error"); return; }
+                const mobilization = {id: mobDoc.id, ...mobDoc.data()};
+                currentMobilizationId = mobilization.id;
+                document.getElementById('edit-mobilization-name').textContent = mobilization.name;
+                const container = document.getElementById('edit-document-list');
+                container.innerHTML = '';
+                const docList = mobilization.type === 'company' ? companyDocsList : collaboratorDocsList;
+                const docGrid = document.createElement('div');
+                docGrid.className = 'document-grid';
+                docList.forEach(docName => { const existingDoc = mobilization.documents[docName]; const initialDate = existingDoc ? existingDoc.initialDate : ''; const docId = docName.replace(/[^a-zA-Z0-9]/g, ''); docGrid.innerHTML += `<div><label for="edit-doc-${docId}" class="block text-sm font-medium text-[--text-secondary]">${docName}</label><input type="text" id="edit-doc-${docId}" data-doc-name="${docName}" class="document-input-edit mt-1 block w-full px-2 py-1.5 text-sm bg-[--bg-primary] border border-[--border-color] rounded-md" value="${initialDate}" placeholder="dd/mm/aaaa ou N/A"></div>`; });
+                container.appendChild(docGrid);
+                switchView('edit');
+            } catch(error) { console.error("Error rendering edit view:", error); showToast("Erro ao carregar dados para edição.", "error"); }
+        }
+
+        function renderAnalysisView(mobilization) {
+            currentMobilizationId = mobilization.id;
+            document.getElementById('analysis-mobilization-name').textContent = mobilization.name;
+            document.getElementById('analysis-forecast-date').textContent = mobilization.analysisForecastDate;
+            const container = document.getElementById('analysis-document-list');
+            container.innerHTML = '';
+            Object.entries(mobilization.documents).forEach(([docName, docData]) => {
+                if (['n/a', 'na'].includes(docData.initialDate.toLowerCase())) return;
+                
+                const history = docData.rejectionHistory;
+                let historyHTML = '';
+                if (history && history.length > 0) {
+                    historyHTML += `<div class="mt-4 pt-3 border-t border-[--border-color]">
+                                    <h6 class="text-sm font-semibold text-[--text-secondary]">Histórico de Pendências Corrigidas:</h6>
+                                    <ul class="list-disc list-inside mt-2 space-y-1 text-xs text-[--text-secondary]">`;
+                    history.forEach(entry => {
+                        historyHTML += `<li><b>${entry.rejectionDate || 'Data antiga'}:</b> ${entry.issue}</li>`;
+                    });
+                    historyHTML += `</ul></div>`;
+                }
+
+                const item = document.createElement('div');
+                item.className = `analysis-card bg-[--bg-secondary] p-4 rounded-lg shadow-sm border-l-4 ${getStatusColorClass(docData.status)}`;
+                item.dataset.docName = docName;
+                item.innerHTML = `<div class="flex justify-between items-center"><h5 class="font-semibold">${docName}</h5><span class="text-sm text-[--text-secondary]">Envio: ${docData.initialDate}</span></div><div class="mt-4"><label class="block text-sm font-medium">Status</label><select class="analysis-status mt-1 block w-full border-[--border-color] rounded-md bg-[--bg-primary] text-[--text-primary]"><option value="pending" ${docData.status === 'pending' ? 'selected' : ''}>Aguardando Análise</option><option value="approved" ${docData.status === 'approved' ? 'selected' : ''}>Aprovado</option><option value="rejected" ${docData.status === 'rejected' ? 'selected' : ''}>Com Pendência</option></select></div><div class="approval-fields mt-4 space-y-4 ${docData.status !== 'approved' ? 'hidden' : ''}"><div><label class="block text-sm font-medium text-[--text-secondary]">Data de Aprovação</label><input type="text" class="analysis-approval-date mt-1 block w-full border-[--border-color] rounded-md bg-[--bg-primary]" value="${docData.approvalDate || ''}" placeholder="dd/mm/aaaa"></div></div><div class="rejection-fields mt-4 space-y-4 ${docData.status !== 'rejected' ? 'hidden' : ''}"><div><label class="block text-sm font-medium">Descrição da Pendência</label><textarea class="analysis-issue mt-1 block w-full border-[--border-color] rounded-md bg-[--bg-primary]">${docData.issue || ''}</textarea></div><div><label class="block text-sm font-medium">Data de Correção</label><input type="text" class="analysis-correction-date mt-1 block w-full border-[--border-color] rounded-md bg-[--bg-primary]" value="${docData.correctionDate || ''}" placeholder="dd/mm/aaaa"></div></div> ${historyHTML}`;
+                container.appendChild(item);
+            });
+            switchView('analysis');
+        }
+
+        async function renderDashboardReport() {
+            dashboardReportEl.innerHTML = '<div class="loader col-span-full"></div>';
+            try {
+                const { allCompanies, allMobilizations } = await fetchAllData();
+                if (allCompanies.length === 0) { dashboardReportEl.innerHTML = '<p class="text-[--text-secondary] col-span-full">Nenhuma empresa cadastrada para exibir o relatório.</p>'; return; }
+                const reportData = allCompanies.map(company => { 
+                    const companyMobilizations = allMobilizations.filter(mob => mob.companyId === company.id && mob.status !== 'inactive'); 
+                    let companyPendencies = 0, collaboratorPendencies = 0, companyAguardando = 0, collaboratorAguardando = 0, approvedCollaborators = 0; 
+                    const collaboratorStatus = {}; 
+                    companyMobilizations.forEach(mob => { 
+                        if (mob.type === 'collaborator') { 
+                            if (!collaboratorStatus[mob.name]) { 
+                                collaboratorStatus[mob.name] = { total: 0, approved: 0 }; 
+                            } 
+                            Object.values(mob.documents).forEach(doc => { 
+                                if(doc.initialDate.toLowerCase() !== 'n/a') { 
+                                    collaboratorStatus[mob.name].total++; 
+                                    if(doc.status === 'approved') { 
+                                        collaboratorStatus[mob.name].approved++; 
+                                    } 
+                                } 
+                            }); 
+                        } 
+                        Object.values(mob.documents).forEach(doc => { 
+                            if (doc.initialDate.toLowerCase() === 'n/a') return; 
+                            if (doc.status === 'rejected') { 
+                                if (mob.type === 'company') companyPendencies++; 
+                                else collaboratorPendencies++; 
+                            } else if (doc.status === 'pending') { 
+                                if (mob.type === 'company') companyAguardando++; 
+                                else collaboratorAguardando++; 
+                            } 
+                        }); 
+                    }); 
+                    Object.values(collaboratorStatus).forEach(status => { 
+                        if (status.total > 0 && status.total === status.approved) { 
+                            approvedCollaborators++; 
+                        } 
+                    }); 
+                    return { ...company, companyPendencies, collaboratorPendencies, totalPendencies: companyPendencies + collaboratorPendencies, companyAguardando, collaboratorAguardando, totalAguardando: companyAguardando + collaboratorAguardando, approvedCollaborators }; 
+                });
+                dashboardReportEl.innerHTML = '';
+                
+                const hideApproved = document.getElementById('hide-approved-toggle').checked;
+
+                reportData.sort((a, b) => b.totalPendencies - a.totalPendencies || b.totalAguardando - a.totalAguardando).forEach(data => {
+                    const isFullyApproved = data.totalPendencies === 0 && data.totalAguardando === 0;
+                    if (hideApproved && isFullyApproved) {
+                        return; 
+                    }
+
+                    const card = document.createElement('div'); 
+                    const totalPendenciesColor = data.totalPendencies > 0 ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'; const totalPendenciesIcon = data.totalPendencies > 0 ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 3.011-1.742 3.011H4.42c-1.53 0-2.493-1.677-1.743-3.011l5.58-9.92zM10 13a1 1 0 100-2 1 1 0 000 2zm-1-8a1 1 0 011-1h.008a1 1 0 011 1v3.013a1 1 0 01-1 1H9a1 1 0 01-1-1V5z" clip-rule="evenodd" /></svg>`: `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>`; const totalAguardandoColor = data.totalAguardando > 0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-500'; const totalAguardandoIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>`; const approvedColor = data.approvedCollaborators > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'; const approvedIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" /></svg>`; card.className = 'dashboard-card-clickable bg-[--bg-secondary] p-5 rounded-lg shadow-md border-l-4 transition-all hover:shadow-lg hover:border-blue-700 cursor-pointer ' + (data.totalPendencies > 0 ? 'border-amber-500' : (isFullyApproved ? 'border-green-500' : 'border-[--border-color]')); card.dataset.id = data.id; card.dataset.name = data.name; card.dataset.contract = data.contractNumber; card.innerHTML = `<div class="flex justify-between items-start"><h3 class="font-bold text-[--text-primary] text-lg">${data.name}</h3><div class="flex flex-col items-end space-y-1"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${approvedColor}">${approvedIcon} ${data.approvedCollaborators} aprovado(s)</span><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${totalPendenciesColor}">${totalPendenciesIcon} ${data.totalPendencies} pendência(s)</span><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${totalAguardandoColor}">${totalAguardandoIcon} ${data.totalAguardando} aguardando</span></div></div><p class="text-sm text-[--text-secondary] mt-1">Contrato: ${data.contractNumber}</p><div class="mt-4 pt-4 border-t border-[--border-color] space-y-2 text-sm"><p class="font-semibold text-[--text-secondary]">Resumo de Status:</p><div class="flex justify-between items-center text-green-700"><span>Colaboradores Aprovados:</span><span class="font-semibold">${data.approvedCollaborators}</span></div><div class="flex justify-between items-center text-red-600"><span>Pendências (Empresa):</span><span class="font-semibold">${data.companyPendencies}</span></div><div class="flex justify-between items-center text-red-600"><span>Pendências (Colaboradores):</span><span class="font-semibold">${data.collaboratorPendencies}</span></div><div class="flex justify-between items-center text-blue-700"><span>Aguardando Análise (Empresa):</span><span class="font-semibold">${data.companyAguardando}</span></div><div class="flex justify-between items-center text-blue-700"><span>Aguardando Análise (Colabs):</span><span class="font-semibold">${data.collaboratorAguardando}</span></div></div>`; dashboardReportEl.appendChild(card); 
+                });
+            } catch (error) { console.error("Erro ao gerar dashboard:", error); dashboardReportEl.innerHTML = '<p class="text-red-500 col-span-full">Falha ao carregar o relatório do dashboard.</p>'; }
+        }
+
+        async function renderPendingReport(filterCompanyId = 'all') {
+            reportContentEl.innerHTML = '<div class="loader"></div>';
+            const companyFilterEl = document.getElementById('company-filter');
+            const reportSummaryEl = document.getElementById('report-summary');
+            try {
+                const { allCompanies, allMobilizations } = await fetchAllData();
+                const activeMobilizations = allMobilizations.filter(m => m.status !== 'inactive');
+                
+                const companyStatus = {};
+                allCompanies.forEach(c => {
+                    companyStatus[c.id] = { ...c, hasPending: false, hasMobilizations: false };
+                });
+
+                activeMobilizations.forEach(mob => {
+                    if (companyStatus[mob.companyId]) {
+                        companyStatus[mob.companyId].hasMobilizations = true;
+                        for (const doc of Object.values(mob.documents)) {
+                            if ((doc.status === 'pending' || doc.status === 'rejected') && doc.initialDate.toLowerCase() !== 'n/a') {
+                                companyStatus[mob.companyId].hasPending = true;
+                                break; 
+                            }
+                        }
+                    }
+                });
+
+                const companiesWithIssues = Object.values(companyStatus).filter(c => c.hasPending);
+                const fullyApprovedCompanies = Object.values(companyStatus).filter(c => c.hasMobilizations && !c.hasPending);
+
+                reportSummaryEl.innerHTML = `
+                    <div><div class="text-2xl font-bold text-amber-600">${companiesWithIssues.length}</div><div class="text-sm text-[--text-secondary]">Com Pendências</div></div>
+                    <div><div class="text-2xl font-bold text-green-600">${fullyApprovedCompanies.length}</div><div class="text-sm text-[--text-secondary]">Aprovadas</div></div>
+                    <div><div class="text-2xl font-bold">${allCompanies.length}</div><div class="text-sm text-[--text-secondary]">Total</div></div>
+                `;
+
+                const currentFilterValue = companyFilterEl.value;
+                companyFilterEl.innerHTML = '<option value="all">Todas as Empresas</option>';
+                allCompanies.forEach(c => {
+                    const option = document.createElement('option');
+                    option.value = c.id;
+                    option.textContent = c.name;
+                    companyFilterEl.appendChild(option);
+                });
+                companyFilterEl.value = currentFilterValue;
+
+                let contentHTML = '';
+
+                const companiesToDisplay = filterCompanyId === 'all' 
+                    ? Object.values(companyStatus).filter(c => c.hasMobilizations)
+                    : [companyStatus[filterCompanyId]].filter(Boolean);
+                
+                // Seção de Empresas com Pendências
+                const pendingHTML = companiesToDisplay.filter(c => c.hasPending).map(company => {
+                    let companyContent = `<div class="report-company-card p-4 border rounded-lg bg-[--bg-secondary] shadow-sm"><div class="flex justify-between items-center"><h3 class="text-lg font-bold">${company.name}</h3><div class="flex items-center space-x-2 text-sm"><input type="checkbox" class="select-all-checkbox rounded"><label>Selecionar Tudo</label></div></div>`;
+                    
+                    const companyMobilizations = activeMobilizations.filter(m => m.companyId === company.id);
+                    const awaitingItems = companyMobilizations.reduce((acc, mob) => {
+                        const docs = Object.keys(mob.documents).filter(docName => mob.documents[docName].status === 'pending' && mob.documents[docName].initialDate.toLowerCase() !== 'n/a');
+                        if (docs.length > 0) acc.push({ mobilizationName: mob.name, documents: docs });
+                        return acc;
+                    }, []);
+
+                    const rejectedItems = companyMobilizations.reduce((acc, mob) => {
+                        const docs = Object.entries(mob.documents).filter(([,docData]) => docData.status === 'rejected' && docData.initialDate.toLowerCase() !== 'n/a').map(([docName, docData]) => ({docName, issue: docData.issue || 'N/A'}));
+                        if (docs.length > 0) acc.push({ mobilizationName: mob.name, originalForecast: mob.analysisForecastDate, pendencies: docs });
+                        return acc;
+                    }, []);
+
+                    if (awaitingItems.length > 0) {
+                        companyContent += `<h4 class="text-md font-semibold mt-4 text-blue-800 dark:text-blue-400">Aguardando Análise</h4>`;
+                        awaitingItems.forEach(mob => {
+                            const docsHTML = mob.documents.map(docName => `<li class="flex items-start text-sm"><input type="checkbox" class="report-item-checkbox mt-1 mr-3 rounded" data-type="awaiting" data-mobilization-name="${mob.mobilizationName}" data-doc-name="${docName}"><span>${docName}</span></li>`).join('');
+                            companyContent += `<div class="mt-2"><h5 class="font-semibold">${mob.mobilizationName}</h5><ul class="mt-1 space-y-1 ml-7">${docsHTML}</ul></div>`;
+                        });
+                    }
+                    if (rejectedItems.length > 0) {
+                        companyContent += `<h4 class="text-md font-semibold mt-4 text-red-800 dark:text-red-400">Com Pendência</h4>`;
+                        rejectedItems.forEach(mob => {
+                            const pendenciesHTML = mob.pendencies.map(p => `<li class="flex items-start text-sm"><input type="checkbox" class="report-item-checkbox mt-1 mr-3 rounded" data-type="rejected" data-mobilization-name="${mob.mobilizationName}" data-doc-name="${p.docName}" data-issue="${p.issue}" data-original-forecast="${mob.originalForecast}"><span><b>${p.docName}:</b> ${p.issue}</span></li>`).join('');
+                            companyContent += `<div class="mt-2"><h5 class="font-semibold">${mob.mobilizationName}</h5><ul class="mt-1 space-y-1 ml-7">${pendenciesHTML}</ul></div>`;
+                        });
+                    }
+                    companyContent += `<div class="mt-6 pt-4 border-t border-[--border-color] flex space-x-2"><button data-company-name="${company.name}" class="generate-manual-message-btn w-full bg-gray-600 text-white px-4 py-2 rounded-md font-medium hover:bg-gray-700">Gerar Mensagem Detalhada</button><button data-company-name="${company.name}" class="generate-ai-message-btn w-full bg-[--accent-color] text-white px-4 py-2 rounded-md font-medium hover:bg-[--accent-hover] flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>Gerar Mensagem Resumida</button></div></div>`;
+                    return companyContent;
+                }).join('');
+
+                if (pendingHTML) {
+                    contentHTML += `<div><h3 class="text-xl font-bold text-amber-600 mb-4">Empresas com Pendências</h3><div class="space-y-4">${pendingHTML}</div></div>`;
+                }
+
+                // Seção de Empresas Aprovadas
+                const approvedHTML = companiesToDisplay.filter(c => !c.hasPending).map(company => {
+                    return `<div class="report-company-card p-4 border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 rounded-lg shadow-sm flex justify-between items-center">
+                                <div>
+                                    <h3 class="text-lg font-bold text-green-800 dark:text-green-300">${company.name}</h3>
+                                    <p class="text-sm text-green-600 dark:text-green-400">Todos os documentos aprovados.</p>
+                                </div>
+                                <button data-company-name="${company.name}" class="generate-approval-message-btn bg-green-600 text-white px-4 py-2 rounded-md font-medium hover:bg-green-700">
+                                    Gerar Mensagem de Aprovação
+                                </button>
+                            </div>`;
+                }).join('');
+
+                if (approvedHTML) {
+                    contentHTML += `<div><h3 class="text-xl font-bold text-green-600 mb-4 mt-8">Empresas Aprovadas</h3><div class="space-y-4">${approvedHTML}</div></div>`;
+                }
+
+                reportContentEl.innerHTML = contentHTML || '<p class="text-[--text-secondary] text-center mt-8">Nenhuma empresa encontrada para o filtro selecionado.</p>';
+                
+            } catch (error) { console.error("Erro ao gerar relatório:", error); reportContentEl.innerHTML = '<p class="text-red-500">Falha ao gerar relatório.</p>'; }
+        }
+
+        async function renderApprovedList() {
+            const approvedListEl = document.getElementById('approved-list');
+            approvedListEl.innerHTML = '<div class="loader"></div>';
+            try {
+                const { allCompanies, allMobilizations } = await fetchAllData();
+                const approvedByCompany = {};
+                const isFullyApproved = (mobilization) => { const relevantDocs = Object.values(mobilization.documents).filter(doc => doc.initialDate && doc.initialDate.toLowerCase() !== 'n/a'); if (relevantDocs.length === 0) return false; return relevantDocs.every(doc => doc.status === 'approved'); };
+                allMobilizations.forEach(mob => { 
+                    if (mob.type === 'collaborator' && mob.status !== 'inactive' && isFullyApproved(mob)) { 
+                        const company = allCompanies.find(c => c.id === mob.companyId); 
+                        if (company) { 
+                            if (!approvedByCompany[company.id]) { 
+                                approvedByCompany[company.id] = { name: company.name, items: [] }; 
+                            } 
+                            approvedByCompany[company.id].items.push(mob.name); 
+                        } 
+                    } 
+                });
+                approvedListEl.innerHTML = '';
+                const approvedCompanies = Object.values(approvedByCompany);
+                if (approvedCompanies.length === 0) { approvedListEl.innerHTML = '<p class="text-[--text-secondary] text-center">Nenhum colaborador totalmente aprovado no momento.</p>'; return; }
+                approvedCompanies.forEach(company => { const companyCard = document.createElement('div'); companyCard.className = 'bg-[--bg-accent] dark:bg-[--bg-secondary] p-4 rounded-lg'; const itemsHTML = company.items.sort().map(itemName => `<li class="flex items-center text-sm text-[--text-primary] py-1"><svg class="h-5 w-5 text-green-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>${itemName}</li>`).join(''); companyCard.innerHTML = `<h3 class="font-semibold text-lg text-[--text-primary] mb-2">${company.name}</h3><ul class="space-y-1">${itemsHTML}</ul>`; approvedListEl.appendChild(companyCard); });
+            } catch (error) { console.error("Erro ao renderizar lista de aprovados:", error); approvedListEl.innerHTML = '<p class="text-red-500">Falha ao carregar a lista de aprovados.</p>'; }
+        }
+        
+        async function renderBiChart() {
+            const biPanel = document.getElementById('tab-panel-bi');
+            biPanel.querySelector('.relative').innerHTML = '<div class="loader"></div> <canvas id="bi-chart"></canvas>';
+            try {
+                const { allMobilizations } = await fetchAllData();
+                const pendencyCounts = allMobilizations.filter(mob => mob.status !== 'inactive').reduce((acc, mob) => {
+                    Object.entries(mob.documents).forEach(([docName, docData]) => {
+                        if (docData.status === 'rejected' && docData.initialDate.toLowerCase() !== 'n/a') {
+                            acc[docName] = (acc[docName] || 0) + 1;
+                        }
+                    });
+                    return acc;
+                }, {});
+                const sortedPendencies = Object.entries(pendencyCounts).sort(([, a], [, b]) => b - a).slice(0, 10);
+                if (sortedPendencies.length === 0) {
+                    biPanel.querySelector('.relative').innerHTML = '<p class="text-[--text-secondary] text-center">Nenhum documento com pendência encontrado para exibir no gráfico.</p>';
+                    return;
+                }
+                const labels = sortedPendencies.map(item => item[0]);
+                const data = sortedPendencies.map(item => item[1]);
+                const ctx = document.getElementById('bi-chart').getContext('2d');
+                if (biChart) { biChart.destroy(); }
+                biChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{ label: 'Quantidade de Pendências', data: data, backgroundColor: 'rgba(79, 70, 229, 0.8)', borderColor: 'rgba(67, 56, 202, 1)', borderWidth: 1 }]
+                    },
+                    options: {
+                        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, title: { display: true, text: 'Top 10 Documentos com Mais Pendências', font: { size: 16 } } },
+                        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    }
+                });
+            } catch (error) {
+                console.error("Erro ao gerar gráfico BI:", error);
+                biPanel.querySelector('.relative').innerHTML = '<p class="text-red-500">Falha ao carregar os dados para a análise BI.</p>';
+            }
+        }
+
+        function updateDocumentListUI(type) { const container = document.getElementById('document-list-container'); const list = type === 'company' ? companyDocsList : collaboratorDocsList; container.innerHTML = `<div class="document-grid"></div>`; const grid = container.querySelector('.document-grid'); grid.innerHTML = list.map(docName => `<div><label class="block text-sm font-medium">${docName}</label><input type="text" data-doc-name="${docName}" class="document-input mt-1 block w-full text-sm border-gray-300 rounded-md" placeholder="dd/mm/aaaa ou N/A"></div>`).join(''); }
+        function exportReportToCSV() { const rows = [["Empresa", "Colaborador/Mobilização", "Status", "Documento", "Observação", "Previsão Original"]]; const companyCards = document.querySelectorAll('.report-company-card'); companyCards.forEach(card => { const companyName = card.querySelector('h3').textContent; card.querySelectorAll('input[data-type="awaiting"]').forEach(item => { const { mobilizationName, docName } = item.dataset; rows.push([companyName, mobilizationName, "Aguardando Análise", docName, "", ""]); }); card.querySelectorAll('input[data-type="rejected"]').forEach(item => { const { mobilizationName, docName, issue, originalForecast } = item.dataset; rows.push([companyName, mobilizationName, "Com Pendência", docName, issue, originalForecast]); }); }); if (rows.length <= 1) { showToast("Nenhum dado para exportar.", "error"); return; } const csv = Papa.unparse(rows); const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); const today = new Date().toISOString().slice(0, 10); link.download = `relatorio_pendencias_${today}.csv`; link.click(); showToast("Relatório exportado com sucesso!"); }
+        function printReport() { window.print(); }
+        
+        function generateSummaryMessage(companyName, checkedItems) {
+            const rejectedDocCounts = {};
+            const awaitingDocCounts = {};
+            let hasRejected = false;
+            let hasAwaiting = false;
+
+            checkedItems.forEach(item => {
+                const docName = item.dataset.docName;
+                if (item.dataset.type === 'rejected') {
+                    hasRejected = true;
+                    rejectedDocCounts[docName] = (rejectedDocCounts[docName] || 0) + 1;
+                } else if (item.dataset.type === 'awaiting') {
+                    hasAwaiting = true;
+                    awaitingDocCounts[docName] = (awaitingDocCounts[docName] || 0) + 1;
+                }
+            });
+
+            if (!hasRejected && !hasAwaiting) {
+                return "Nenhum item com pendência ou aguardando análise foi selecionado. Selecione os itens para gerar o resumo.";
+            }
+
+            let message = `📋 *Status da Mobilização - ${companyName}*\n\n`;
+
+            if (hasRejected) {
+                message += "🚨 *Pendências Encontradas*\n";
+                message += "Identificamos os seguintes documentos que precisam de correção:\n\n";
+                for (const docName in rejectedDocCounts) {
+                    const count = rejectedDocCounts[docName];
+                    message += `➡️ *${count}x* ${docName}\n`;
+                }
+                message += `\nA nova previsão para *reanálise* após o envio das correções é *${calculateReanalysisDate()}*.\n\n`;
+            }
+
+            if (hasAwaiting) {
+                if (hasRejected) {
+                     message += "--------------------------------------\n\n";
+                }
+                message += "⏳ *Aguardando Análise*\n";
+                message += "Os seguintes documentos estão na fila para análise:\n\n";
+                for (const docName in awaitingDocCounts) {
+                    const count = awaitingDocCounts[docName];
+                    message += `➡️ *${count}x* ${docName}\n`;
+                }
+                message += "\n";
+            }
+            
+            message += "Agradecemos a atenção! 👍";
+
+            return message;
+        }
+        
+        function generateConsolidatedSummaryMessage(checkedItems) {
+            const summaryByCompany = {};
+
+            checkedItems.forEach(item => {
+                const companyCard = item.closest('.report-company-card');
+                const companyName = companyCard.querySelector('h3').textContent;
+                const { type, docName } = item.dataset;
+
+                if (!summaryByCompany[companyName]) {
+                    summaryByCompany[companyName] = { rejected: {}, awaiting: {} };
+                }
+
+                if (type === 'rejected') {
+                    summaryByCompany[companyName].rejected[docName] = (summaryByCompany[companyName].rejected[docName] || 0) + 1;
+                } else if (type === 'awaiting') {
+                    summaryByCompany[companyName].awaiting[docName] = (summaryByCompany[companyName].awaiting[docName] || 0) + 1;
+                }
+            });
+
+            if (Object.keys(summaryByCompany).length === 0) {
+                return "Nenhum item com pendência ou aguardando análise foi selecionado.";
+            }
+
+            let message = "📋 *Resumo Geral de Status da Mobilização*\n\n";
+            message += "--------------------------------------\n";
+
+            for (const companyName in summaryByCompany) {
+                message += `\n🏢 *${companyName.toUpperCase()}*\n`;
+                const { rejected, awaiting } = summaryByCompany[companyName];
+                const hasRejected = Object.keys(rejected).length > 0;
+                const hasAwaiting = Object.keys(awaiting).length > 0;
+
+                if (hasRejected) {
+                    message += "\n  🚨 *Pendências Encontradas:*\n";
+                    for (const docName in rejected) {
+                        message += `    ➡️ *${rejected[docName]}x* ${docName}\n`;
+                    }
+                }
+
+                if (hasAwaiting) {
+                    message += "\n  ⏳ *Aguardando Análise:*\n";
+                    for (const docName in awaiting) {
+                        message += `    ➡️ *${awaiting[docName]}x* ${docName}\n`;
+                    }
+                }
+            }
+
+            message += "\n--------------------------------------\n";
+            message += `\nA nova previsão para *reanálise* de todos os itens com pendência é *${calculateReanalysisDate()}*.\n\n`;
+            message += "Agradecemos a atenção! 👍";
+
+            return message;
+        }
+
+        function generateApprovalMessage(companyName) { let message = `✅ *Status de Mobilização - ${companyName}* 🎉\n\n`; message += "\n\n"; message += "Não há nenhuma pendência no momento. A equipe está liberada para o início das atividades conforme o cronograma.\n\n"; message += "Agradecemos pela colaboração e agilidade! 👍"; return message; }
+        function generateFullApprovalMessage(approvedData) { if (Object.keys(approvedData).length === 0) { return "Nenhum item totalmente aprovado para gerar a mensagem."; } let message = "📋✅ *Lista de Colaboradores Aprovados*\n\n"; message += "Segue a relação de colaboradores 100% aprovados e liberados para o início das atividades:\n\n"; message += "--------------------------------------\n"; const sortedCompanies = Object.values(approvedData).sort((a, b) => a.name.localeCompare(b.name)); sortedCompanies.forEach(company => { message += `\n🏢 *${company.name.toUpperCase()}*\n`; company.items.sort().forEach(itemName => { message += `  - ${itemName}\n`; }); }); message += "--------------------------------------\n\n"; message += "Agradecemos a colaboração de todos! 👍"; return message; }
+        function listenForCompanies() { companyListEl.innerHTML = '<div class="loader"></div>'; const q = query(collection(db, "companies"), orderBy("name")); unsubscribeCompanies = onSnapshot(q, (querySnapshot) => { const companiesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderCompanies(companiesData); }, (error) => { console.error("Erro ao ouvir empresas:", error); companyListEl.innerHTML = '<p class="text-red-500">Falha ao carregar empresas.</p>'; }); }
+        function listenForMobilizationBatches(companyId) { mobilizationBatchListEl.innerHTML = '<div class="loader"></div>'; const q = query(collection(db, "mobilizationBatches"), where("companyId", "==", companyId)); unsubscribeMobilizationBatches = onSnapshot(q, async (batchSnapshot) => { const batchesData = batchSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); batchesData.sort((a, b) => b.date.localeCompare(a.date)); const mobCounts = {}; const mobilizationsQuery = query(collection(db, "mobilizations"), where("companyId", "==", companyId)); const mobSnapshot = await getDocs(mobilizationsQuery); mobSnapshot.forEach(doc => { const mob = doc.data(); mobCounts[mob.batchId] = (mobCounts[mob.batchId] || 0) + 1; }); batchesData.forEach(batch => batch.mobilizationCount = mobCounts[batch.id] || 0); renderMobilizationBatches(batchesData); }, (error) => { console.error("Erro ao ouvir lotes:", error); mobilizationBatchListEl.innerHTML = '<p class="text-red-500">Falha ao carregar lotes.</p>'; }); }
+        function listenForMobilizations(batchId) { mobilizationListEl.innerHTML = '<div class="loader"></div>'; const q = query(collection(db, "mobilizations"), where("batchId", "==", batchId)); unsubscribeMobilizations = onSnapshot(q, (querySnapshot) => { const mobilizationsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderMobilizations(mobilizationsData); }, (error) => { console.error("Erro ao ouvir mobilizações:", error); mobilizationListEl.innerHTML = '<p class="text-red-500">Falha ao carregar mobilizações.</p>'; }); }
+        async function addCompany(e) { e.preventDefault(); const form = e.target; const newCompany = { name: form.companyName.value.trim(), contractNumber: form.contractNumber.value.trim() }; if (!newCompany.name || !newCompany.contractNumber) return showToast("Preencha todos os campos.", "error"); try { await addDoc(collection(db, "companies"), newCompany); showToast("Empresa adicionada com sucesso!"); form.reset(); handleTabClick('empresas'); } catch (error) { console.error("Erro ao adicionar empresa: ", error); showToast("Erro ao salvar empresa.", "error"); } }
+        async function addMobilizationBatch(e) { e.preventDefault(); const form = e.target; const newBatch = { companyId: currentCompanyId, date: form.batchDate.value, description: form.batchDescription.value.trim(), type: form.batchType.value }; if (!newBatch.date) return showToast("A data é obrigatória.", "error"); try { const batchRef = await addDoc(collection(db, "mobilizationBatches"), newBatch); showToast("Lote criado com sucesso!"); addBatchModal.classList.add('hidden'); form.reset(); if (newBatch.type === 'company') { const documents = {}; companyDocsList.forEach(docName => { documents[docName] = { initialDate: 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }; }); await addDoc(collection(db, "mobilizations"), { companyId: currentCompanyId, batchId: batchRef.id, name: 'Documentação da Empresa', type: 'company', documents, analysisForecastDate: 'N/A' }); } } catch (error) { console.error("Erro ao criar lote:", error); showToast("Erro ao criar lote.", "error"); } }
+        async function addMobilization(e) { e.preventDefault(); const form = e.target; const collaboratorName = form.collaboratorName.value.trim(); if (!collaboratorName) return showToast('Nome do colaborador é obrigatório.', 'error'); const documents = {}, docDates = []; document.querySelectorAll('.document-input').forEach(input => { const date = input.value.trim() || 'N/A'; docDates.push(date); documents[input.dataset.docName] = { initialDate: date, status: 'pending', issue: '', correctionDate: '', approvalDate: '' }; }); try { await addDoc(collection(db, "mobilizations"), { companyId: currentCompanyId, batchId: currentBatchId, name: collaboratorName, type: 'collaborator', documents, analysisForecastDate: calculateForecastDate(docDates), status: 'active' }); showToast("Colaborador adicionado com sucesso!"); form.reset(); } catch (error) { console.error("Erro ao adicionar mobilização: ", error); showToast("Erro ao salvar colaborador.", "error"); } }
+        async function updateAnalysis(e) { e.preventDefault(); if (!currentMobilizationId) return; try { const mobilizationRef = doc(db, "mobilizations", currentMobilizationId); const q = query(collection(db, "mobilizations"), where("__name__", "==", currentMobilizationId)); const mobDoc = (await getDocs(q)).docs[0]; const currentData = mobDoc.data(); const finalDocuments = { ...currentData.documents }; document.querySelectorAll('.analysis-card').forEach(card => { const docName = card.dataset.docName; if (finalDocuments[docName]) { const previousStatus = currentData.documents[docName].status; const newStatus = card.querySelector('.analysis-status').value; const currentIssue = currentData.documents[docName].issue || ''; const currentCorrectionDate = currentData.documents[docName].correctionDate || ''; if (previousStatus === 'rejected' && newStatus !== 'rejected') { const historyEntry = { issue: currentIssue, correctionDate: currentCorrectionDate, rejectionDate: currentData.documents[docName].lastAnalysisDate || new Date().toLocaleDateString('pt-BR') }; if (!finalDocuments[docName].rejectionHistory) { finalDocuments[docName].rejectionHistory = []; } finalDocuments[docName].rejectionHistory.push(historyEntry); } finalDocuments[docName].status = newStatus; finalDocuments[docName].issue = card.querySelector('.analysis-issue')?.value.trim() || ''; finalDocuments[docName].correctionDate = card.querySelector('.analysis-correction-date')?.value.trim() || ''; finalDocuments[docName].approvalDate = card.querySelector('.analysis-approval-date')?.value.trim() || ''; finalDocuments[docName].lastAnalysisDate = new Date().toLocaleDateString('pt-BR'); } }); await updateDoc(mobilizationRef, { documents: finalDocuments }); showToast("Análise salva com sucesso!"); switchView('list'); } catch (error) { console.error("Erro ao atualizar análise: ", error); showToast("Erro ao salvar análise.", "error"); } }
+        async function handleUpdateMobilization(e) { e.preventDefault(); if (!currentMobilizationId) return; try { const mobilizationRef = doc(db, "mobilizations", currentMobilizationId); const q = query(collection(db, "mobilizations"), where("__name__", "==", currentMobilizationId)); const mobDoc = (await getDocs(q)).docs[0]; const currentData = mobDoc.data(); const finalDocuments = { ...currentData.documents }; const docDates = []; document.querySelectorAll('.document-input-edit').forEach(input => { const docName = input.dataset.docName; const date = input.value.trim() || 'N/A'; docDates.push(date); if(finalDocuments[docName]) { finalDocuments[docName].initialDate = date; } else { finalDocuments[docName] = { initialDate: date, status: 'pending', issue: '', correctionDate: '', approvalDate: '' }; } }); const newForecastDate = calculateForecastDate(docDates); await updateDoc(mobilizationRef, { documents: finalDocuments, analysisForecastDate: newForecastDate }); showToast("Mobilização atualizada com sucesso!"); switchView('list'); } catch (error) { console.error("Error updating mobilization:", error); showToast("Erro ao salvar as alterações.", "error"); } }
+        async function handleCollaboratorStatusChange(mobilizationId, newStatus) { try { const mobilizationRef = doc(db, "mobilizations", mobilizationId); await updateDoc(mobilizationRef, { status: newStatus }); showToast(`Colaborador marcado como ${newStatus === 'inactive' ? 'inativo' : 'ativo'}.`); } catch (error) { console.error("Erro ao atualizar status do colaborador:", error); showToast("Falha ao atualizar o status.", "error"); } }
+        function requestDeleteItem(type, id, parentId = null) { itemToDelete = { type, id, parentId }; let message = `Tem certeza que deseja excluir? Esta ação é irreversível.`; if(type === 'company') message += ' Todos os lotes e mobilizações associados também serão excluídos.'; if(type === 'batch') message += ' Todas as mobilizações neste lote também serão excluídas.'; document.getElementById('modal-body').textContent = message; confirmationModal.classList.remove('hidden'); }
+        async function performDelete() { const { type, id } = itemToDelete; if (!type || !id) return; try { if (type === 'company') { const mobsQuery = query(collection(db, "mobilizations"), where("companyId", "==", id)); const mobsSnapshot = await getDocs(mobsQuery); const mobDeletes = mobsSnapshot.docs.map(d => deleteDoc(d.ref)); await Promise.all(mobDeletes); const batchesQuery = query(collection(db, "mobilizationBatches"), where("companyId", "==", id)); const batchesSnapshot = await getDocs(batchesQuery); const batchDeletes = batchesSnapshot.docs.map(d => deleteDoc(d.ref)); await Promise.all(batchDeletes); await deleteDoc(doc(db, "companies", id)); } else if (type === 'batch') { const mobsQuery = query(collection(db, "mobilizations"), where("batchId", "==", id)); const mobsSnapshot = await getDocs(mobsQuery); const mobDeletes = mobsSnapshot.docs.map(d => deleteDoc(d.ref)); await Promise.all(mobDeletes); await deleteDoc(doc(db, "mobilizationBatches", id)); } else if (type === 'mobilization') { await deleteDoc(doc(db, "mobilizations", id)); } showToast("Item excluído com sucesso."); } catch (error) { console.error("Erro ao excluir: ", error); showToast("Erro ao excluir item.", "error"); } confirmationModal.classList.add('hidden'); }
+        function setupPresenceListener() { const onlineCounterEl = document.getElementById('online-counter'); const myConnectionRef = ref(rtdb, '.info/connected'); const presenceRef = ref(rtdb, 'presence'); const sessionId = Math.random().toString(36).substring(2, 11); const mySessionRef = ref(rtdb, `presence/${sessionId}`); onValue(myConnectionRef, (snap) => { if (snap.val() === true) { onDisconnect(mySessionRef).remove(); set(mySessionRef, true); } }); onValue(presenceRef, (snap) => { onlineCounterEl.textContent = snap.numChildren(); }); }
+        function parseFile(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (event) => { try { if (file.name.endsWith('.csv')) { const text = event.target.result; Papa.parse(text, { complete: (results) => resolve(extractDataFromRows(results.data, file.name)), error: (err) => reject(err), }); } else { const workbook = XLSX.read(event.target.result, { type: 'binary', cellDates: true }); const sheetName = workbook.SheetNames.find(name => !name.toLowerCase().includes('planilha2')) || workbook.SheetNames[0]; const worksheet = workbook.Sheets[sheetName]; const dataGrid = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null, raw: false }); const merges = worksheet['!merges'] || []; merges.forEach(merge => { const { s, e } = merge; const value = dataGrid[s.r] ? dataGrid[s.r][s.c] : null; if (value === null) return; for (let R = s.r; R <= e.r; ++R) { for (let C = s.c; C <= e.c; ++C) { if (!dataGrid[R]) dataGrid[R] = []; dataGrid[R][C] = value; } } }); resolve(extractDataFromRows(dataGrid, file.name)); } } catch(err) { reject(err); } }; if (file.name.endsWith('.csv')) { reader.readAsText(file); } else { reader.readAsBinaryString(file); } }); }
+        function extractDataFromRows(data, fileName) { const parsed = { companyName: '', contractNumber: '', companyDocs: {}, collaborators: [] }; const nameMatch = fileName.match(/(\d+)\s(.+?)(?:\s-\s.*)?\.(csv|xlsx|xls)/i); if (nameMatch) { parsed.contractNumber = nameMatch[1]; parsed.companyName = nameMatch[2].replace(/_/g, ' ').trim(); } let collaboratorHeaderIndex = -1; let headers = []; data.forEach((row, rowIndex) => { if (!row || row.length === 0 || row.every(cell => cell === null || String(cell).trim() === '')) return; const firstCell = String(row[0] || '').trim(); if (companyDocsList.includes(firstCell)) { parsed.companyDocs[firstCell] = formatImportDate(row[2] || 'N/A'); } if (firstCell.toLowerCase().includes('colaborador')) { collaboratorHeaderIndex = rowIndex; headers = row.map(h => String(h || '').trim()); } if (collaboratorHeaderIndex !== -1 && rowIndex > collaboratorHeaderIndex + 1) { const collaboratorName = String(row[0] || '').trim(); if (collaboratorName && collaboratorName.length > 2 && !collaboratorName.toLowerCase().includes('exemplo')) { const collaborator = { name: collaboratorName, documents: {} }; headers.forEach((header, colIndex) => { if (colIndex > 0 && header) { const matchingDoc = collaboratorDocsList.find(doc => header.toLowerCase().includes(doc.split(' ')[0].toLowerCase().replace('+',''))); if(matchingDoc) { collaborator.documents[matchingDoc] = formatImportDate(row[colIndex] || 'N/A'); } } }); if(Object.keys(collaborator.documents).length > 0) { parsed.collaborators.push(collaborator); } } } }); return parsed; }
+        async function renderImportPreview(allParsedData) { importPreviewArea.innerHTML = ''; parsedDataForImport = allParsedData; const companiesOptions = allCompaniesCache.map(c => `<option value="${c.id}" data-contract="${c.contractNumber}">${c.name}</option>`).join(''); allParsedData.forEach((data, index) => { const card = document.createElement('div'); card.className = 'bg-white p-4 rounded-lg shadow-sm border'; card.dataset.index = index; const companyDocsHTML = Object.entries(data.companyDocs).map(([name, date]) => `<div class="flex justify-between text-sm"><span class="text-gray-600">${name}:</span> <span class="font-medium">${date}</span></div>`).join(''); const collaboratorsHTML = data.collaborators.map(c => `<tr class="border-b"><td class="py-2 pr-2">${c.name}</td><td class="py-2 pl-2 text-right">${Object.values(c.documents).filter(d => d !== 'N/A').length} docs</td></tr>`).join(''); const matchedCompany = allCompaniesCache.find(c => c.contractNumber === data.contractNumber); card.innerHTML = `<h3 class="font-bold text-lg mb-4">Verificação do Arquivo: ${data.fileName}</h3><div><label class="block text-sm font-medium">Associar à Empresa</label><select class="import-company-select mt-1 block w-full border-gray-300 rounded-md"><option value="new">-- Criar Nova Empresa --</option>${companiesOptions}</select></div><div class="import-new-company-fields grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"><div><label class="block text-sm font-medium">Nome da Empresa</label><input type="text" value="${data.companyName}" class="import-company-name mt-1 block w-full border-gray-300 rounded-md"></div><div><label class="block text-sm font-medium">Nº do Contrato</label><input type="text" value="${data.contractNumber}" class="import-contract-number mt-1 block w-full border-gray-300 rounded-md"></div></div><div class="mt-4"><h4 class="font-semibold">Documentos da Empresa Encontrados:</h4><div class="mt-2 space-y-1">${companyDocsHTML || '<p class="text-sm text-gray-500">Nenhum</p>'}</div></div><div class="mt-4"><h4 class="font-semibold">Colaboradores Encontrados (${data.collaborators.length}):</h4><div class="mt-2 border rounded-md max-h-48 overflow-y-auto p-2"><table class="w-full text-sm"><tbody>${collaboratorsHTML || '<tr><td>Nenhum</td></tr>'}</tbody></table></div></div>`; importPreviewArea.appendChild(card); const select = card.querySelector('.import-company-select'); if (matchedCompany) { select.value = matchedCompany.id; } select.dispatchEvent(new Event('change')); }); importActions.classList.toggle('hidden', allParsedData.length === 0); }
+        async function handleImportData() { importFinalBtn.disabled = true; importFinalBtn.textContent = 'Importando...'; try { document.querySelectorAll('#import-preview-area > div').forEach((card, index) => { const select = card.querySelector('.import-company-select'); const selectedOption = select.options[select.selectedIndex]; parsedDataForImport[index].selectedCompanyId = select.value === 'new' ? null : select.value; if (select.value === 'new') { parsedDataForImport[index].companyName = card.querySelector('.import-company-name').value; parsedDataForImport[index].contractNumber = card.querySelector('.import-contract-number').value; } else { parsedDataForImport[index].companyName = selectedOption.text; parsedDataForImport[index].contractNumber = selectedOption.dataset.contract; } }); for (const data of parsedDataForImport) { if (!data.companyName || !data.contractNumber) continue; let companyId = data.selectedCompanyId; if (!companyId) { const q = query(collection(db, "companies"), where("contractNumber", "==", data.contractNumber)); const existingCompany = await getDocs(q); if (existingCompany.empty) { const newCompanyRef = await addDoc(collection(db, "companies"), { name: data.companyName, contractNumber: data.contractNumber }); companyId = newCompanyRef.id; } else { companyId = existingCompany.docs[0].id; } } const today = new Date().toISOString().split('T')[0]; const batch = writeBatch(db); if (Object.keys(data.companyDocs).length > 0) { const companyBatchRef = doc(collection(db, "mobilizationBatches")); batch.set(companyBatchRef, { companyId, date: today, description: `Docs da empresa importados de ${data.fileName}`, type: 'company' }); const companyMobRef = doc(collection(db, "mobilizations")); const documents = {}; companyDocsList.forEach(docName => { documents[docName] = { initialDate: data.companyDocs[docName] || 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }}); batch.set(companyMobRef, { companyId, batchId: companyBatchRef.id, name: 'Documentação da Empresa', type: 'company', documents, analysisForecastDate: calculateForecastDate(Object.values(documents).map(d=>d.initialDate)) }); } if (data.collaborators.length > 0) { const collabBatchRef = doc(collection(db, "mobilizationBatches")); batch.set(collabBatchRef, { companyId, date: today, description: `Colaboradores importados de ${data.fileName}`, type: 'collaborators' }); data.collaborators.forEach(collab => { const collabMobRef = doc(collection(db, "mobilizations")); const documents = {}; collaboratorDocsList.forEach(docName => { documents[docName] = { initialDate: collab.documents[docName] || 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }}); batch.set(collabMobRef, { companyId, batchId: collabBatchRef.id, name: collab.name, type: 'collaborator', documents, analysisForecastDate: calculateForecastDate(Object.values(documents).map(d=>d.initialDate)), status: 'active' }); }); } await batch.commit(); showToast(`Dados para '${data.companyName}' importados com sucesso!`); } importPreviewArea.innerHTML = ''; importActions.classList.add('hidden'); fileInput.value = ''; handleTabClick('dashboard'); } catch (error) { console.error("Erro na importação final:", error); showToast("Ocorreu um erro durante a importação.", "error"); } finally { importFinalBtn.disabled = false; importFinalBtn.textContent = 'Importar Dados Verificados'; } }
+        function exportTemplateCSV() { const companyHeader = ["Documentação empresa", "", "Data de Carregamento"]; const companyRows = companyDocsList.map(doc => [doc, "", ""]); const collaboratorHeader = ["Colaborador", ...collaboratorDocsList]; const collaboratorExampleRow = ["Exemplo Nome Sobrenome", ...collaboratorDocsList.map(() => "dd/mm/aaaa ou N/A")]; const csvData = [ companyHeader, ...companyRows, [], [], collaboratorHeader, collaboratorExampleRow ]; const csv = Papa.unparse(csvData); const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); const url = URL.createObjectURL(blob); link.setAttribute("href", url); link.setAttribute("download", "modelo_importacao.csv"); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            allSections = { main: document.getElementById('main-section'), batch: document.getElementById('mobilization-batch-section'), list: document.getElementById('mobilization-list-section'), analysis: document.getElementById('analysis-detail-section'), edit: document.getElementById('edit-mobilization-section') };
+            companyListEl = document.getElementById('company-list');
+            mobilizationListEl = document.getElementById('mobilization-list');
+            mobilizationBatchListEl = document.getElementById('mobilization-batch-list');
+            confirmationModal = document.getElementById('confirmation-modal');
+            confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+            cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+            addBatchModal = document.getElementById('add-batch-modal');
+            messageModal = document.getElementById('message-modal');
+            reportContentEl = document.getElementById('report-content');
+            dashboardReportEl = document.getElementById('dashboard-report');
+            fileInput = document.getElementById('file-input');
+            importPreviewArea = document.getElementById('import-preview-area');
+            importActions = document.getElementById('import-actions');
+            importFinalBtn = document.getElementById('import-final-btn');
+            exportTemplateBtn = document.getElementById('export-template-btn');
+            approvedListEl = document.getElementById('approved-list');
+            exportApprovedBtn = document.getElementById('export-approved-btn');
+            themeToggle = document.getElementById('theme-toggle');
+
+            document.getElementById('add-company-form').addEventListener('submit', addCompany);
+            document.getElementById('add-batch-form').addEventListener('submit', addMobilizationBatch);
+            document.getElementById('add-mobilization-form').addEventListener('submit', addMobilization);
+            document.getElementById('analysis-form').addEventListener('submit', updateAnalysis);
+            document.getElementById('edit-mobilization-form').addEventListener('submit', handleUpdateMobilization);
+            document.getElementById('back-to-dashboard-from-batch').addEventListener('click', () => switchView('main'));
+            document.getElementById('back-to-batches').addEventListener('click', () => switchView('batch'));
+            document.getElementById('back-to-mobilizations').addEventListener('click', () => switchView('list'));
+            document.getElementById('back-to-list-from-edit').addEventListener('click', () => switchView('list'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => handleTabClick(btn.id.split('-')[2])));
+            document.getElementById('add-batch-btn').addEventListener('click', () => addBatchModal.classList.remove('hidden'));
+            document.getElementById('cancel-batch-btn').addEventListener('click', () => addBatchModal.classList.add('hidden'));
+            document.getElementById('hide-approved-toggle').addEventListener('change', renderDashboardReport);
+            dashboardReportEl.addEventListener('click', e => { const card = e.target.closest('.dashboard-card-clickable'); if (card) { const { id, name, contract } = card.dataset; currentCompanyId = id; currentCompanyName = name; currentCompanyContract = contract; document.getElementById('batch-company-name').textContent = name; document.getElementById('batch-company-contract').textContent = contract; listenForMobilizationBatches(id); switchView('batch'); } });
+            companyListEl.addEventListener('click', e => { const viewBtn = e.target.closest('.view-batches-btn'); if (viewBtn) { const { id, name, contract } = viewBtn.dataset; currentCompanyId = id; currentCompanyName = name; currentCompanyContract = contract; document.getElementById('batch-company-name').textContent = name; document.getElementById('batch-company-contract').textContent = contract; listenForMobilizationBatches(id); switchView('batch'); } const deleteBtn = e.target.closest('.delete-company-btn'); if (deleteBtn) requestDeleteItem('company', deleteBtn.dataset.id); });
+            mobilizationBatchListEl.addEventListener('click', e => { const viewBtn = e.target.closest('.view-mobilizations-btn'); if (viewBtn) { const { id, date, description, type } = viewBtn.dataset; currentBatchId = id; document.getElementById('list-batch-date').textContent = date; document.getElementById('list-batch-description').textContent = description || 'Sem descrição'; const addFormContainer = document.getElementById('add-mobilization-form-container'); if (type === 'company') { addFormContainer.classList.add('hidden'); } else { addFormContainer.classList.remove('hidden'); updateDocumentListUI('collaborator'); } listenForMobilizations(id); switchView('list'); } const deleteBtn = e.target.closest('.delete-batch-btn'); if (deleteBtn) requestDeleteItem('batch', deleteBtn.dataset.id, currentCompanyId); });
+            mobilizationListEl.addEventListener('click', async e => { const analyzeBtn = e.target.closest('.analyze-mobilization-btn'); if (analyzeBtn) { const q = query(collection(db, "mobilizations"), where("__name__", "==", analyzeBtn.dataset.id)); const mobDoc = (await getDocs(q)).docs[0]; renderAnalysisView({id: mobDoc.id, ...mobDoc.data()}); } const editBtn = e.target.closest('.edit-mobilization-btn'); if(editBtn) { renderEditMobilizationView(editBtn.dataset.id); } const deleteBtn = e.target.closest('.delete-mobilization-btn'); if (deleteBtn) requestDeleteItem('mobilization', deleteBtn.dataset.id, currentBatchId); const deactivateCheckbox = e.target.closest('.deactivate-collaborator-checkbox'); if (deactivateCheckbox) { const mobilizationId = deactivateCheckbox.dataset.id; const newStatus = deactivateCheckbox.checked ? 'inactive' : 'active'; handleCollaboratorStatusChange(mobilizationId, newStatus); } });
+            document.getElementById('analysis-document-list').addEventListener('change', e => { if (e.target.classList.contains('analysis-status')) { const card = e.target.closest('.analysis-card'); card.querySelector('.rejection-fields').classList.toggle('hidden', e.target.value !== 'rejected'); card.querySelector('.approval-fields').classList.toggle('hidden', e.target.value !== 'approved'); card.className = `analysis-card bg-white p-4 rounded-lg shadow-sm border-l-4 ${getStatusColorClass(e.target.value)}`; } });
+            reportContentEl.addEventListener('click', e => { const manualBtn = e.target.closest('.generate-manual-message-btn'); const aiBtn = e.target.closest('.generate-ai-message-btn'); const approvalBtn = e.target.closest('.generate-approval-message-btn'); const selectAllCheckbox = e.target.closest('.select-all-checkbox'); if (selectAllCheckbox) { const card = selectAllCheckbox.closest('.report-company-card'); card.querySelectorAll('.report-item-checkbox').forEach(checkbox => checkbox.checked = selectAllCheckbox.checked); return; } const messageTextarea = document.getElementById('generated-message-textarea'); if (approvalBtn) { messageTextarea.value = generateApprovalMessage(approvalBtn.dataset.companyName); messageModal.classList.remove('hidden'); return; } if (manualBtn || aiBtn) { const companyCard = (manualBtn || aiBtn).closest('.report-company-card'); const checkedItems = companyCard.querySelectorAll('.report-item-checkbox:checked'); if (checkedItems.length === 0) return showToast("Selecione ao menos um item.", "error"); messageTextarea.value = "Gerando mensagem..."; messageModal.classList.remove('hidden'); if (aiBtn) { messageTextarea.value = generateSummaryMessage(aiBtn.dataset.companyName, checkedItems); } else { const rejectedItems = {}; const awaitingItems = {}; checkedItems.forEach(item => { const { type, mobilizationName, docName, issue, originalForecast } = item.dataset; if (type === 'rejected') { if (!rejectedItems[mobilizationName]) rejectedItems[mobilizationName] = { docs: [], originalForecast }; rejectedItems[mobilizationName].docs.push({ docName, issue }); } else if (type === 'awaiting') { if (!awaitingItems[mobilizationName]) awaitingItems[mobilizationName] = { docs: [] }; awaitingItems[mobilizationName].docs.push({ docName }); } }); let message = `*Informativo - ${manualBtn.dataset.companyName}*\n`; if (Object.keys(rejectedItems).length > 0) { message += "\n*RELATÓRIO DE PENDÊNCIAS*\n"; for (const mobName in rejectedItems) { message += `\n*Mobilização: ${mobName}*\n_Previsão Original: ${rejectedItems[mobName].originalForecast}_\n`; rejectedItems[mobName].docs.forEach(p => { message += `• ${p.docName}: ${p.issue}\n`; }); } message += `\nA nova previsão para *reanálise* após o envio é *${calculateReanalysisDate()}*.`; } if (Object.keys(awaitingItems).length > 0) { message += "\n\n*DOCUMENTOS AGUARDANDO ANÁLISE*\n"; for (const mobName in awaitingItems) { message += `\n*Mobilização: ${mobName}*\n`; awaitingItems[mobName].docs.forEach(p => { message += `• ${p.docName}\n`; }); } } messageTextarea.value = message; } } });
+            
+            document.getElementById('generate-all-summary-btn').addEventListener('click', () => {
+                const checkedItems = document.querySelectorAll('#report-content .report-item-checkbox:checked');
+                if (checkedItems.length === 0) {
+                    return showToast("Selecione ao menos um item de qualquer empresa.", "error");
+                }
+                const message = generateConsolidatedSummaryMessage(checkedItems);
+                document.getElementById('generated-message-textarea').value = message;
+                messageModal.classList.remove('hidden');
+            });
+
+            fileInput.addEventListener('change', async (event) => { const files = event.target.files; if (!files.length) return; importPreviewArea.innerHTML = '<div class="loader"></div>'; const allParsedData = []; for (const file of files) { try { const parsed = await parseFile(file); parsed.fileName = file.name; allParsedData.push(parsed); } catch (error) { console.error("Erro ao processar o arquivo:", file.name, error); showToast(`Falha ao ler o arquivo ${file.name}.`, "error"); } } renderImportPreview(allParsedData); });
+            importPreviewArea.addEventListener('change', e => { if (e.target.classList.contains('import-company-select')) { const card = e.target.closest('[data-index]'); const newCompanyFields = card.querySelector('.import-new-company-fields'); newCompanyFields.style.display = e.target.value === 'new' ? 'grid' : 'none'; } });
+            importFinalBtn.addEventListener('click', handleImportData);
+            exportTemplateBtn.addEventListener('click', exportTemplateCSV);
+            exportApprovedBtn.addEventListener('click', async () => { const { allCompanies, allMobilizations } = await fetchAllData(); const approvedData = []; allCompanies.forEach(company => { const collaboratorMobilizations = allMobilizations.filter(mob => mob.companyId === company.id && mob.type === 'collaborator' && mob.status !== 'inactive'); collaboratorMobilizations.forEach(mob => { const relevantDocs = Object.values(mob.documents).filter(d => d.initialDate && d.initialDate.toLowerCase() !== 'n/a'); const approvedCount = relevantDocs.filter(d => d.status === 'approved').length; if (relevantDocs.length > 0 && relevantDocs.length === approvedCount) { approvedData.push({ "Empresa": company.name, "Contrato": company.contractNumber, "Colaborador Aprovado": mob.name }); } }); }); if (approvedData.length === 0) { showToast("Nenhum colaborador totalmente aprovado para exportar.", "error"); return; } const csv = Papa.unparse(approvedData); const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "colaboradores_aprovados.csv"; link.click(); });
+            document.getElementById('generate-approved-message-btn').addEventListener('click', async () => { try { const { allCompanies, allMobilizations } = await fetchAllData(); const approvedByCompany = {}; const isFullyApproved = (mobilization) => { const relevantDocs = Object.values(mobilization.documents).filter(doc => doc.initialDate && doc.initialDate.toLowerCase() !== 'n/a'); if (relevantDocs.length === 0) return false; return relevantDocs.every(doc => doc.status === 'approved'); }; 
+            allMobilizations.forEach(mob => { 
+                if (mob.type === 'collaborator' && mob.status !== 'inactive' && isFullyApproved(mob)) { 
+                    const company = allCompanies.find(c => c.id === mob.companyId); 
+                    if (company) { 
+                        if (!approvedByCompany[company.id]) { 
+                            approvedByCompany[company.id] = { name: company.name, items: [] }; 
+                        } 
+                        approvedByCompany[company.id].items.push(mob.name); 
+                    } 
+                } 
+            }); 
+            const message = generateFullApprovalMessage(approvedByCompany); document.getElementById('generated-message-textarea').value = message; messageModal.classList.remove('hidden'); } catch (error) { console.error("Erro ao gerar mensagem de aprovados:", error); showToast("Falha ao gerar a mensagem.", "error"); } });
+            document.getElementById('close-message-btn').addEventListener('click', () => messageModal.classList.add('hidden'));
+            document.getElementById('copy-message-btn').addEventListener('click', () => { const textarea = document.getElementById('generated-message-textarea'); textarea.select(); textarea.setSelectionRange(0, 99999); try { document.execCommand('copy'); showToast("Mensagem copiada!"); } catch (err) { showToast("Falha ao copiar a mensagem.", "error"); } });
+            document.getElementById('share-whatsapp-btn').addEventListener('click', () => { const message = document.getElementById('generated-message-textarea').value; if (!message) { showToast("Não há mensagem para enviar.", "error"); return; } const encodedMessage = encodeURIComponent(message); const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedMessage}`; window.open(whatsappUrl, '_blank'); });
+            confirmDeleteBtn.addEventListener('click', performDelete);
+            cancelDeleteBtn.addEventListener('click', () => confirmationModal.classList.add('hidden'));
+            themeToggle.addEventListener('click', () => { document.documentElement.classList.toggle('dark'); localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light'); });
+            document.getElementById('company-filter').addEventListener('change', (e) => renderPendingReport(e.target.value));
+            document.getElementById('export-report-btn').addEventListener('click', exportReportToCSV);
+            document.getElementById('print-report-btn').addEventListener('click', printReport);
+            function init() { if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) { document.documentElement.classList.add('dark') } else { document.documentElement.classList.remove('dark') } handleTabClick('dashboard'); setupPresenceListener(); }
+            init();
+        });
+    </script>
+</body>
+</html>
+
