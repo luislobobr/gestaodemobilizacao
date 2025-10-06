@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Mobilização de Empresas v2.1</title>
+    <title>Gestão de Mobilização de Empresas v2.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -87,10 +87,8 @@
 
     <div id="app-container" class="max-w-screen-2xl mx-auto p-4 sm:p-6 lg:p-8">
         
-        <!-- ESTRUTURA ALTERADA: Layout com menu lateral -->
         <div class="flex flex-col md:flex-row md:space-x-8">
 
-            <!-- INÍCIO DO MENU LATERAL (ASIDE) -->
             <aside class="w-full md:w-64 flex-shrink-0 mb-8 md:mb-0">
                 <header class="mb-8 flex justify-between items-start">
                     <div class="flex items-center space-x-4">
@@ -98,46 +96,37 @@
                     </div>
                 </header>
                 <nav id="main-nav" class="flex flex-col space-y-2">
-                    <!-- Dashboard -->
                     <button id="tab-btn-dashboard" class="tab-btn flex items-center w-full text-left p-3 rounded-lg font-medium text-sm bg-[--bg-accent] text-[--accent-color]">
                         <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h7.5" /></svg>
                         Dashboard
                     </button>
-                    <!-- Cadastro -->
                     <button id="tab-btn-cadastro" class="tab-btn flex items-center w-full text-left p-3 rounded-lg font-medium text-sm text-[--text-secondary] hover:bg-[--bg-accent] hover:text-[--text-primary]">
                         <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         Cadastro
                     </button>
-                    <!-- Importar -->
                     <button id="tab-btn-importar" class="tab-btn flex items-center w-full text-left p-3 rounded-lg font-medium text-sm text-[--text-secondary] hover:bg-[--bg-accent] hover:text-[--text-primary]">
                         <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
                         Importar
                     </button>
-                    <!-- Gerenciar -->
                     <button id="tab-btn-empresas" class="tab-btn flex items-center w-full text-left p-3 rounded-lg font-medium text-sm text-[--text-secondary] hover:bg-[--bg-accent] hover:text-[--text-primary]">
                         <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>
                         Gerenciar
                     </button>
-                    <!-- Aprovados -->
                     <button id="tab-btn-aprovados" class="tab-btn flex items-center w-full text-left p-3 rounded-lg font-medium text-sm text-[--text-secondary] hover:bg-[--bg-accent] hover:text-[--text-primary]">
                         <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         Aprovados
                     </button>
-                    <!-- Análise BI -->
                     <button id="tab-btn-bi" class="tab-btn flex items-center w-full text-left p-3 rounded-lg font-medium text-sm text-[--text-secondary] hover:bg-[--bg-accent] hover:text-[--text-primary]">
                         <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 1.5m1-1.5l1 1.5m0 0l.5 1.5m.5-1.5h.5M6 16.5h2.25m0 0l1-1.5m-1 1.5l-1-1.5m0 0l-.5-1.5m-.5 1.5h-.5" /></svg>
                         Análise BI
                     </button>
-                    <!-- Relatórios -->
                     <button id="tab-btn-relatorio" class="tab-btn flex items-center w-full text-left p-3 rounded-lg font-medium text-sm text-[--text-secondary] hover:bg-[--bg-accent] hover:text-[--text-primary]">
                         <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
                         Relatórios
                     </button>
                 </nav>
             </aside>
-            <!-- FIM DO MENU LATERAL -->
 
-            <!-- INÍCIO DO CONTEÚDO PRINCIPAL -->
             <main class="flex-1">
                 <div class="flex justify-between items-center mb-6">
                     <div>
@@ -163,12 +152,18 @@
                 <div id="main-section">
                     <div class="mt-6">
                         <div id="tab-panel-dashboard" class="tab-panel">
-                            <div class="flex justify-between items-center mb-4">
-                               <h2 class="text-xl font-semibold text-[--text-primary]">Visão Geral das Empresas</h2>
-                               <div class="flex items-center">
-                                   <input type="checkbox" id="hide-approved-toggle" class="h-4 w-4 rounded border-gray-300 text-[--accent-color] focus:ring-[--accent-color]">
-                                   <label for="hide-approved-toggle" class="ml-2 block text-sm text-[--text-secondary]">Ocultar empresas 100% aprovadas</label>
-                               </div>
+                            <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                                <h2 class="text-xl font-semibold text-[--text-primary]">Visão Geral das Empresas</h2>
+                                <div class="flex items-center space-x-4">
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="hide-approved-toggle" class="h-4 w-4 rounded border-gray-300 text-[--accent-color] focus:ring-[--accent-color]">
+                                        <label for="hide-approved-toggle" class="ml-2 block text-sm text-[--text-secondary]">Ocultar 100% aprovadas</label>
+                                    </div>
+                                    <button id="sort-dashboard-btn" class="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md flex items-center">
+                                        <svg class="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" /></svg>
+                                        Ordenar
+                                    </button>
+                                </div>
                             </div>
                             <div id="dashboard-report" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"><div class="loader"></div></div>
                         </div>
@@ -219,10 +214,9 @@
                 <div id="analysis-detail-section" class="hidden"><button id="back-to-mobilizations" class="mb-6 inline-flex items-center px-4 py-2 border border-[--border-color] shadow-sm text-sm font-medium rounded-md text-[--text-secondary] bg-[--bg-secondary] hover:bg-slate-50 dark:hover:bg-slate-800">&larr; Voltar</button><div class="bg-[--bg-secondary] p-6 rounded-lg shadow-md border border-[--border-color]"><h2 class="text-2xl font-bold mb-1">Análise de Documentos</h2><p id="analysis-mobilization-name" class="text-[--text-secondary]"></p><p class="text-sm text-blue-600 dark:text-blue-400 font-semibold mt-2">Previsão de Análise: <span id="analysis-forecast-date"></span></p><form id="analysis-form" class="mt-6"><div id="analysis-document-list" class="space-y-6"></div><button type="submit" class="mt-8 w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">Salvar Alterações da Análise</button></form></div></div>
                 
                 <footer class="text-center text-sm text-[--text-secondary] mt-12 pb-4">
-                    <p id="app-version">Versão 2.1.0 (2025-10-01)</p>
+                    <p id="app-version">Versão 2.3.0 (2025-10-06)</p>
                 </footer>
             </main>
-            <!-- FIM DO CONTEÚDO PRINCIPAL -->
         </div>
     </div>
 
@@ -232,7 +226,6 @@
     <div id="toast-modal" class="hidden fixed bottom-5 right-5 bg-gray-800 text-white py-3 px-5 rounded-lg shadow-lg"><p id="toast-message"></p></div>
 
     <script type="module">
-        // ATUALIZAÇÃO: Versão do Firebase JS SDK atualizada para 10.12.2 para melhor performance e segurança.
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, addDoc, deleteDoc, updateDoc, query, where, onSnapshot, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         import { getDatabase, ref, onValue, set, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -241,7 +234,7 @@
             apiKey: "AIzaSyDBTC6BZiR9hZDrEjO6RpLPLGtC0SS7Gdg",
             authDomain: "gestao-mobilizacao.firebaseapp.com",
             projectId: "gestao-mobilizacao",
-            storageBucket: "gestao-mobilizacao.appspot.com", // Corrigido para o domínio correto
+            storageBucket: "gestao-mobilizacao.appspot.com",
             messagingSenderId: "727503039032",
             appId: "1:727503039032:web:60e51d0131ac3e02ae14cd"
         };
@@ -261,6 +254,7 @@
         let unsubscribeCompanies = null, unsubscribeMobilizationBatches = null, unsubscribeMobilizations = null;
         let parsedDataForImport = [], allCompaniesCache = [], awaitingAnalysisCache = {};
         let biChart = null;
+        let dashboardSortAsc = false;
 
         const companyDocsList = ['PCMSO', 'PGR', 'SESMT-NR04'];
         const collaboratorDocsList = ['RG+CPF', 'CTPS ou E-Social', 'CNH', 'ASO', 'Ordem de Serviço', 'NR 11', 'NR 10', 'NR 06', 'NR 12', 'NR 34', 'NR 35', 'FICHA DE EPI', 'NR 18', 'NR 33', 'NR 20', 'CPE', 'APH', 'INTEGRAÇÃO', 'SINALIZAÇÃO'];
@@ -269,6 +263,8 @@
 
         function showToast(message, type = 'success') { const toastModal = document.getElementById('toast-modal'); const toastMessage = document.getElementById('toast-message'); toastMessage.textContent = message; toastModal.classList.remove('hidden', 'bg-red-600', 'bg-gray-800'); toastModal.classList.add(type === 'error' ? 'bg-red-600' : 'bg-gray-800'); setTimeout(() => toastModal.classList.add('hidden'), 3000); }
         function formatDate(dateString) { if (!dateString) return ''; const [year, month, day] = dateString.split('-'); return `${day}/${month}/${year}`; }
+        function formatBrazilianDateTime(date) { const dateObj = new Date(date); return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(dateObj); }
+        function formatTimeAgo(date) { const dateObj = new Date(date); const seconds = Math.round((new Date() - dateObj) / 1000); const minutes = Math.round(seconds / 60); const hours = Math.round(minutes / 60); const days = Math.round(hours / 24); if (seconds < 5) return `agora mesmo`; if (minutes < 60) return `há ${minutes} minuto${minutes > 1 ? 's' : ''}`; if (hours < 24) return `há ${hours} hora${hours > 1 ? 's' : ''}`; if (days === 1) return `ontem`; if (days < 7) return `há ${days} dias`; return formatBrazilianDateTime(date); }
         function formatImportDate(dateValue) { if (!dateValue || typeof dateValue === 'string' && dateValue.toLowerCase().includes('n/a')) return 'N/A'; let date; if (typeof dateValue === 'number') { date = new Date(Math.round((dateValue - 25569) * 86400 * 1000)); } else if (typeof dateValue === 'string') { const cleanedDate = dateValue.trim(); const parts = cleanedDate.split(/[/-]/); if (parts.length !== 3) return 'N/A'; if (parts[0].length === 4) { date = new Date(parts[0], parseInt(parts[1],10) - 1, parts[2]); } else if (parts[2].length === 4) { date = new Date(parts[2], parseInt(parts[1],10) - 1, parts[0]); } else { return 'N/A'; } } else if (dateValue instanceof Date) { date = dateValue; } else { return 'N/A'; } if (isNaN(date.getTime())) return 'N/A'; const day = String(date.getDate()).padStart(2, '0'); const month = String(date.getMonth() + 1).padStart(2, '0'); const year = date.getFullYear(); return `${day}/${month}/${year}`; }
         function calculateForecastDate(dates) { const validDates = dates.map(dateStr => { if (!dateStr || ['n/a', 'na'].includes(dateStr.toLowerCase())) return null; const parts = dateStr.split('/'); if (parts.length !== 3) return null; const d = new Date(parts[2], parseInt(parts[1], 10) - 1, parts[0]); return isNaN(d) ? null : d; }).filter(Boolean); if (validDates.length === 0) return 'N/A'; const lastDate = new Date(Math.max(...validDates)); let businessDays = 2; let forecastDate = new Date(lastDate); while (businessDays > 0) { forecastDate.setDate(forecastDate.getDate() + 1); if (forecastDate.getDay() % 6 !== 0) businessDays--; } return forecastDate.toLocaleDateString('pt-BR'); }
         function calculateReanalysisDate() { let businessDays = 2, forecastDate = new Date(); while (businessDays > 0) { forecastDate.setDate(forecastDate.getDate() + 1); if (forecastDate.getDay() % 6 !== 0) businessDays--; } return forecastDate.toLocaleDateString('pt-BR'); }
@@ -328,24 +324,24 @@
                 const card = document.createElement('div');
                 card.className = `p-4 rounded-lg shadow-sm border-l-4 ${isFullyApproved ? 'approved-card' : 'bg-[--bg-secondary] border-[--border-color]'} ${mob.status === 'inactive' ? 'opacity-60 bg-slate-100 dark:bg-slate-800' : ''}`;
                 card.innerHTML = `<div class="flex justify-between items-start">
-                                    <div>
-                                        <p class="font-semibold text-lg">${mob.name}</p>
-                                        <p class="text-sm text-[--text-secondary]">Previsão: ${mob.analysisForecastDate}</p>
-                                        <p class="text-sm font-medium ${isFullyApproved ? 'text-green-600' : 'text-yellow-600'}">${approvedCount} de ${totalApplicableDocs} aprovados</p>
-                                    </div>
-                                    <div class="flex items-center space-x-4">
-                                        ${mob.type === 'collaborator' ? `
-                                        <div class="flex items-center">
-                                            <input type="checkbox" id="inactive-toggle-${mob.id}" data-id="${mob.id}" class="deactivate-collaborator-checkbox h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500" ${mob.status === 'inactive' ? 'checked' : ''}>
-                                            <label for="inactive-toggle-${mob.id}" class="ml-2 block text-sm text-amber-700 dark:text-amber-500">Inativo</label>
-                                        </div>` : ''}
-                                        <div class="flex items-center space-x-2">
-                                            <button data-id="${mob.id}" class="edit-mobilization-btn bg-yellow-500 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-yellow-600">Editar</button>
-                                            <button data-id="${mob.id}" class="analyze-mobilization-btn bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-blue-800">Analisar</button>
-                                            <button data-id="${mob.id}" class="delete-mobilization-btn text-red-500 p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50"><svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button>
+                                        <div>
+                                            <p class="font-semibold text-lg">${mob.name}</p>
+                                            <p class="text-sm text-[--text-secondary]">Previsão: ${mob.analysisForecastDate}</p>
+                                            <p class="text-sm font-medium ${isFullyApproved ? 'text-green-600' : 'text-yellow-600'}">${approvedCount} de ${totalApplicableDocs} aprovados</p>
                                         </div>
-                                    </div>
-                                  </div>`;
+                                        <div class="flex items-center space-x-4">
+                                            ${mob.type === 'collaborator' ? `
+                                            <div class="flex items-center">
+                                                <input type="checkbox" id="inactive-toggle-${mob.id}" data-id="${mob.id}" class="deactivate-collaborator-checkbox h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500" ${mob.status === 'inactive' ? 'checked' : ''}>
+                                                <label for="inactive-toggle-${mob.id}" class="ml-2 block text-sm text-amber-700 dark:text-amber-500">Inativo</label>
+                                            </div>` : ''}
+                                            <div class="flex items-center space-x-2">
+                                                <button data-id="${mob.id}" class="edit-mobilization-btn bg-yellow-500 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-yellow-600">Editar</button>
+                                                <button data-id="${mob.id}" class="analyze-mobilization-btn bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-blue-800">Analisar</button>
+                                                <button data-id="${mob.id}" class="delete-mobilization-btn text-red-500 p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50"><svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button>
+                                            </div>
+                                        </div>
+                                    </div>`;
                 mobilizationListEl.appendChild(card);
             });
         }
@@ -399,7 +395,6 @@
             switchView('analysis');
         }
 
-        // IMPROVEMENT: Dashboard logic updated to count by pending collaborator and total pending documents.
         async function renderDashboardReport() {
             dashboardReportEl.innerHTML = '<div class="loader col-span-full"></div>';
             try {
@@ -411,11 +406,23 @@
 
                 const reportData = allCompanies.map(company => {
                     const companyMobilizations = allMobilizations.filter(mob => mob.companyId === company.id && mob.status !== 'inactive');
-
                     const pendingCollaboratorNames = new Set();
                     let totalPendingDocuments = 0;
                     const totalCollaboratorNames = new Set();
-                    const collaboratorStatus = {}; // { collaboratorName: { total: 0, approved: 0 } }
+                    const collaboratorStatus = {};
+                    
+                    let lastUpdate = null;
+                    if (companyMobilizations.length > 0) {
+                        const updateTimes = companyMobilizations
+                            .map(mob => mob.lastModified ? new Date(mob.lastModified) : null)
+                            .filter(date => date !== null);
+                        if (updateTimes.length > 0) {
+                            lastUpdate = new Date(Math.max.apply(null, updateTimes));
+                        }
+                    }
+
+                    let totalApplicableDocuments = 0;
+                    let totalApprovedDocuments = 0;
 
                     companyMobilizations.forEach(mob => {
                         let collaboratorHasIssue = false;
@@ -425,9 +432,13 @@
                                 collaboratorStatus[mob.name] = { total: 0, approved: 0 };
                             }
                         }
-
                         Object.values(mob.documents).forEach(doc => {
                             if (doc.initialDate && doc.initialDate.toLowerCase() !== 'n/a') {
+                                totalApplicableDocuments++;
+                                if (doc.status === 'approved') {
+                                    totalApprovedDocuments++;
+                                }
+
                                 if (mob.type === 'collaborator') {
                                     collaboratorStatus[mob.name].total++;
                                 }
@@ -441,7 +452,6 @@
                                 }
                             }
                         });
-
                         if (collaboratorHasIssue) {
                             pendingCollaboratorNames.add(mob.name);
                         }
@@ -453,82 +463,104 @@
                             approvedCollaboratorCount++;
                         }
                     });
+                    
+                    const progressPercentage = totalApplicableDocuments > 0 ? (totalApprovedDocuments / totalApplicableDocuments) * 100 : 0;
 
                     return {
                         ...company,
                         pendingCollaboratorCount: pendingCollaboratorNames.size,
                         totalPendingDocuments: totalPendingDocuments,
                         approvedCollaboratorCount: approvedCollaboratorCount,
-                        totalCollaborators: totalCollaboratorNames.size
+                        totalCollaborators: totalCollaboratorNames.size,
+                        totalApplicableDocuments,
+                        totalApprovedDocuments,
+                        progressPercentage,
+                        lastUpdate: lastUpdate
                     };
                 });
 
                 dashboardReportEl.innerHTML = '';
                 const hideApproved = document.getElementById('hide-approved-toggle').checked;
 
-                reportData.sort((a, b) => b.totalPendingDocuments - a.totalPendingDocuments || b.pendingCollaboratorCount - a.pendingCollaboratorCount).forEach(data => {
+                reportData.sort((a, b) => {
+                    const dateA = a.lastUpdate ? new Date(a.lastUpdate) : 0;
+                    const dateB = b.lastUpdate ? new Date(b.lastUpdate) : 0;
+                    return dashboardSortAsc ? dateA - dateB : dateB - dateA;
+                });
+                
+                reportData.forEach(data => {
                     const hasIssues = data.totalPendingDocuments > 0;
                     const hasMobilizations = data.totalCollaborators > 0 || allMobilizations.some(m => m.companyId === data.id && m.type === 'company');
                     const isFullyApproved = !hasIssues && hasMobilizations;
 
-                    if (hideApproved && isFullyApproved) {
-                        return;
-                    }
+                    if (hideApproved && isFullyApproved) return;
 
                     const card = document.createElement('div');
                     const pendenciesColor = hasIssues ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300' : 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300';
                     const pendenciesIcon = hasIssues ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 3.011-1.742 3.011H4.42c-1.53 0-2.493-1.677-1.743-3.011l5.58-9.92zM10 13a1 1 0 100-2 1 1 0 000 2zm-1-8a1 1 0 011-1h.008a1 1 0 011 1v3.013a1 1 0 01-1 1H9a1 1 0 01-1-1V5z" clip-rule="evenodd" /></svg>` : `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>`;
                     
                     let borderColorClass = 'border-[--border-color]';
-                    if(hasIssues) {
-                        borderColorClass = 'border-amber-500';
-                    } else if (isFullyApproved) {
-                        borderColorClass = 'border-green-500';
-                    }
+                    if(hasIssues) { borderColorClass = 'border-amber-500'; } 
+                    else if (isFullyApproved) { borderColorClass = 'border-green-500'; }
 
-                    card.className = `dashboard-card-clickable bg-[--bg-secondary] p-5 rounded-lg shadow-md border-l-4 transition-all hover:shadow-lg hover:border-blue-700 cursor-pointer ${borderColorClass}`;
-                    card.dataset.id = data.id;
-                    card.dataset.name = data.name;
-                    card.dataset.contract = data.contractNumber;
+                    card.className = `dashboard-card-clickable bg-[--bg-secondary] p-5 rounded-lg shadow-md border-l-4 transition-all hover:shadow-xl hover:-translate-y-1 cursor-pointer flex flex-col ${borderColorClass}`;
+                    card.dataset.id = data.id; card.dataset.name = data.name; card.dataset.contract = data.contractNumber;
+                    
+                    const progressColor = data.progressPercentage === 100 ? 'bg-green-500' : 'bg-blue-600';
 
                     let summaryHTML = '';
                     if (data.totalCollaborators > 0 || hasIssues) {
                          summaryHTML = `
                         <div class="mt-4 pt-4 border-t border-[--border-color] space-y-2 text-sm">
                             <p class="font-semibold text-[--text-secondary]">Resumo de Colaboradores:</p>
-                            <div class="flex justify-between items-center text-[--text-primary]">
-                                <span>Total de Colaboradores:</span>
-                                <span class="font-semibold">${data.totalCollaborators}</span>
-                            </div>
-                            <div class="flex justify-between items-center text-green-700 dark:text-green-400">
-                                <span>Colaboradores Aprovados:</span>
-                                <span class="font-semibold">${data.approvedCollaboratorCount}</span>
-                            </div>
-                            <div class="flex justify-between items-center text-amber-600 dark:text-amber-400">
-                                <span>Colaboradores com Pendências:</span>
-                                <span class="font-semibold">${data.pendingCollaboratorCount}</span>
-                            </div>
+                            <div class="flex justify-between items-center text-[--text-primary]"><span>Total:</span><span class="font-semibold">${data.totalCollaborators}</span></div>
+                            <div class="flex justify-between items-center text-green-700 dark:text-green-400"><span>Aprovados:</span><span class="font-semibold">${data.approvedCollaboratorCount}</span></div>
+                            <div class="flex justify-between items-center text-amber-600 dark:text-amber-400"><span>Com Pendências:</span><span class="font-semibold">${data.pendingCollaboratorCount}</span></div>
                         </div>`;
                     } else {
-                         summaryHTML = `
-                         <div class="mt-4 pt-4 border-t border-[--border-color] text-sm text-center text-[--text-secondary]">
-                            <p>Nenhum colaborador adicionado ainda.</p>
-                         </div>
-                         `;
+                         summaryHTML = `<div class="mt-4 pt-4 border-t border-[--border-color] text-sm text-center text-[--text-secondary]"><p>Nenhum colaborador adicionado.</p></div>`;
                     }
+                    
+                    const lastUpdateHTML = data.lastUpdate ? `
+                    <div class="mt-3" title="Data exata: ${formatBrazilianDateTime(data.lastUpdate)}">
+                        <div class="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                            <svg class="h-4 w-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <span>Última atualização: ${formatTimeAgo(data.lastUpdate)}</span>
+                        </div>
+                    </div>` : `
+                    <div class="mt-3">
+                        <div class="flex items-center text-xs text-gray-400 dark:text-gray-500 italic">
+                             <svg class="h-4 w-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <span>Nenhuma atualização registrada</span>
+                        </div>
+                    </div>`;
 
                     card.innerHTML = `
-                        <div class="flex justify-between items-start">
-                            <h3 class="font-bold text-[--text-primary] text-lg">${data.name}</h3>
-                            <div class="flex flex-col items-end space-y-1">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${pendenciesColor}">
-                                   ${pendenciesIcon} ${data.totalPendingDocuments} doc(s) pendente(s)
+                        <div>
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-bold text-[--text-primary] text-lg leading-tight">${data.name}</h3>
+                                    <p class="text-sm text-[--text-secondary] mt-1">Contrato: ${data.contractNumber}</p>
+                                </div>
+                                <span class="flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${pendenciesColor}">
+                                   ${pendenciesIcon} ${data.totalPendingDocuments} pendente(s)
                                 </span>
                             </div>
+
+                            <div class="mt-4">
+                                <div class="flex justify-between items-center text-sm text-[--text-secondary] mb-1">
+                                    <span>Progresso Geral</span>
+                                    <span class="font-semibold text-[--text-primary]">${data.totalApprovedDocuments} / ${data.totalApplicableDocuments}</span>
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div class="${progressColor} h-2 rounded-full transition-all duration-500" style="width: ${data.progressPercentage}%"></div>
+                                </div>
+                            </div>
+                            ${lastUpdateHTML}
+                            ${summaryHTML}
                         </div>
-                        <p class="text-sm text-[--text-secondary] mt-1">Contrato: ${data.contractNumber}</p>
-                        ${summaryHTML}
                     `;
+
                     dashboardReportEl.appendChild(card);
                 });
             } catch (error) {
@@ -536,8 +568,7 @@
                 dashboardReportEl.innerHTML = '<p class="text-red-500 col-span-full">Falha ao carregar o relatório do dashboard.</p>';
             }
         }
-
-
+        
         async function renderPendingReport(filterCompanyId = 'all') {
             reportContentEl.innerHTML = '<div class="loader"></div>';
             const companyFilterEl = document.getElementById('company-filter');
@@ -588,7 +619,6 @@
                     ? Object.values(companyStatus).filter(c => c.hasMobilizations)
                     : [companyStatus[filterCompanyId]].filter(Boolean);
                 
-                // Seção de Empresas com Pendências
                 const pendingHTML = companiesToDisplay.filter(c => c.hasPending).map(company => {
                     let companyContent = `<div class="report-company-card p-4 border rounded-lg bg-[--bg-secondary] shadow-sm"><div class="flex justify-between items-center"><h3 class="text-lg font-bold">${company.name}</h3><div class="flex items-center space-x-2 text-sm"><input type="checkbox" class="select-all-checkbox rounded"><label>Selecionar Tudo</label></div></div>`;
                     
@@ -627,7 +657,6 @@
                     contentHTML += `<div><h3 class="text-xl font-bold text-amber-600 mb-4">Empresas com Pendências</h3><div class="space-y-4">${pendingHTML}</div></div>`;
                 }
 
-                // Seção de Empresas Aprovadas
                 const approvedHTML = companiesToDisplay.filter(c => !c.hasPending).map(company => {
                     return `<div class="report-company-card p-4 border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 rounded-lg shadow-sm flex justify-between items-center">
                                 <div>
@@ -829,18 +858,18 @@
         function listenForMobilizationBatches(companyId) { mobilizationBatchListEl.innerHTML = '<div class="loader"></div>'; const q = query(collection(db, "mobilizationBatches"), where("companyId", "==", companyId)); unsubscribeMobilizationBatches = onSnapshot(q, async (batchSnapshot) => { const batchesData = batchSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); batchesData.sort((a, b) => b.date.localeCompare(a.date)); const mobCounts = {}; const mobilizationsQuery = query(collection(db, "mobilizations"), where("companyId", "==", companyId)); const mobSnapshot = await getDocs(mobilizationsQuery); mobSnapshot.forEach(doc => { const mob = doc.data(); mobCounts[mob.batchId] = (mobCounts[mob.batchId] || 0) + 1; }); batchesData.forEach(batch => batch.mobilizationCount = mobCounts[batch.id] || 0); renderMobilizationBatches(batchesData); }, (error) => { console.error("Erro ao ouvir lotes:", error); mobilizationBatchListEl.innerHTML = '<p class="text-red-500">Falha ao carregar lotes.</p>'; }); }
         function listenForMobilizations(batchId) { mobilizationListEl.innerHTML = '<div class="loader"></div>'; const q = query(collection(db, "mobilizations"), where("batchId", "==", batchId)); unsubscribeMobilizations = onSnapshot(q, (querySnapshot) => { const mobilizationsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderMobilizations(mobilizationsData); }, (error) => { console.error("Erro ao ouvir mobilizações:", error); mobilizationListEl.innerHTML = '<p class="text-red-500">Falha ao carregar mobilizações.</p>'; }); }
         async function addCompany(e) { e.preventDefault(); const form = e.target; const newCompany = { name: form.companyName.value.trim(), contractNumber: form.contractNumber.value.trim() }; if (!newCompany.name || !newCompany.contractNumber) return showToast("Preencha todos os campos.", "error"); try { await addDoc(collection(db, "companies"), newCompany); showToast("Empresa adicionada com sucesso!"); form.reset(); handleTabClick('empresas'); } catch (error) { console.error("Erro ao adicionar empresa: ", error); showToast("Erro ao salvar empresa.", "error"); } }
-        async function addMobilizationBatch(e) { e.preventDefault(); const form = e.target; const newBatch = { companyId: currentCompanyId, date: form.batchDate.value, description: form.batchDescription.value.trim(), type: form.batchType.value }; if (!newBatch.date) return showToast("A data é obrigatória.", "error"); try { const batchRef = await addDoc(collection(db, "mobilizationBatches"), newBatch); showToast("Lote criado com sucesso!"); addBatchModal.classList.add('hidden'); form.reset(); if (newBatch.type === 'company') { const documents = {}; companyDocsList.forEach(docName => { documents[docName] = { initialDate: 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }; }); await addDoc(collection(db, "mobilizations"), { companyId: currentCompanyId, batchId: batchRef.id, name: 'Documentação da Empresa', type: 'company', documents, analysisForecastDate: 'N/A' }); } } catch (error) { console.error("Erro ao criar lote:", error); showToast("Erro ao criar lote.", "error"); } }
-        async function addMobilization(e) { e.preventDefault(); const form = e.target; const collaboratorName = form.collaboratorName.value.trim(); if (!collaboratorName) return showToast('Nome do colaborador é obrigatório.', 'error'); const documents = {}, docDates = []; document.querySelectorAll('.document-input').forEach(input => { const date = input.value.trim() || 'N/A'; docDates.push(date); documents[input.dataset.docName] = { initialDate: date, status: 'pending', issue: '', correctionDate: '', approvalDate: '' }; }); try { await addDoc(collection(db, "mobilizations"), { companyId: currentCompanyId, batchId: currentBatchId, name: collaboratorName, type: 'collaborator', documents, analysisForecastDate: calculateForecastDate(docDates), status: 'active' }); showToast("Colaborador adicionado com sucesso!"); form.reset(); } catch (error) { console.error("Erro ao adicionar mobilização: ", error); showToast("Erro ao salvar colaborador.", "error"); } }
-        async function updateAnalysis(e) { e.preventDefault(); if (!currentMobilizationId) return; try { const mobilizationRef = doc(db, "mobilizations", currentMobilizationId); const q = query(collection(db, "mobilizations"), where("__name__", "==", currentMobilizationId)); const mobDoc = (await getDocs(q)).docs[0]; const currentData = mobDoc.data(); const finalDocuments = { ...currentData.documents }; document.querySelectorAll('.analysis-card').forEach(card => { const docName = card.dataset.docName; if (finalDocuments[docName]) { const previousStatus = currentData.documents[docName].status; const newStatus = card.querySelector('.analysis-status').value; const currentIssue = currentData.documents[docName].issue || ''; const currentCorrectionDate = currentData.documents[docName].correctionDate || ''; if (previousStatus === 'rejected' && newStatus !== 'rejected') { const historyEntry = { issue: currentIssue, correctionDate: currentCorrectionDate, rejectionDate: currentData.documents[docName].lastAnalysisDate || new Date().toLocaleDateString('pt-BR') }; if (!finalDocuments[docName].rejectionHistory) { finalDocuments[docName].rejectionHistory = []; } finalDocuments[docName].rejectionHistory.push(historyEntry); } finalDocuments[docName].status = newStatus; finalDocuments[docName].issue = card.querySelector('.analysis-issue')?.value.trim() || ''; finalDocuments[docName].correctionDate = card.querySelector('.analysis-correction-date')?.value.trim() || ''; finalDocuments[docName].approvalDate = card.querySelector('.analysis-approval-date')?.value.trim() || ''; finalDocuments[docName].lastAnalysisDate = new Date().toLocaleDateString('pt-BR'); } }); await updateDoc(mobilizationRef, { documents: finalDocuments }); showToast("Análise salva com sucesso!"); switchView('list'); } catch (error) { console.error("Erro ao atualizar análise: ", error); showToast("Erro ao salvar análise.", "error"); } }
-        async function handleUpdateMobilization(e) { e.preventDefault(); if (!currentMobilizationId) return; try { const mobilizationRef = doc(db, "mobilizations", currentMobilizationId); const q = query(collection(db, "mobilizations"), where("__name__", "==", currentMobilizationId)); const mobDoc = (await getDocs(q)).docs[0]; const currentData = mobDoc.data(); const finalDocuments = { ...currentData.documents }; const docDates = []; document.querySelectorAll('.document-input-edit').forEach(input => { const docName = input.dataset.docName; const date = input.value.trim() || 'N/A'; docDates.push(date); if(finalDocuments[docName]) { finalDocuments[docName].initialDate = date; } else { finalDocuments[docName] = { initialDate: date, status: 'pending', issue: '', correctionDate: '', approvalDate: '' }; } }); const newForecastDate = calculateForecastDate(docDates); await updateDoc(mobilizationRef, { documents: finalDocuments, analysisForecastDate: newForecastDate }); showToast("Mobilização atualizada com sucesso!"); switchView('list'); } catch (error) { console.error("Error updating mobilization:", error); showToast("Erro ao salvar as alterações.", "error"); } }
-        async function handleCollaboratorStatusChange(mobilizationId, newStatus) { try { const mobilizationRef = doc(db, "mobilizations", mobilizationId); await updateDoc(mobilizationRef, { status: newStatus }); showToast(`Colaborador marcado como ${newStatus === 'inactive' ? 'inativo' : 'ativo'}.`); } catch (error) { console.error("Erro ao atualizar status do colaborador:", error); showToast("Falha ao atualizar o status.", "error"); } }
+        async function addMobilizationBatch(e) { e.preventDefault(); const form = e.target; const newBatch = { companyId: currentCompanyId, date: form.batchDate.value, description: form.batchDescription.value.trim(), type: form.batchType.value }; if (!newBatch.date) return showToast("A data é obrigatória.", "error"); try { const batchRef = await addDoc(collection(db, "mobilizationBatches"), newBatch); showToast("Lote criado com sucesso!"); addBatchModal.classList.add('hidden'); form.reset(); if (newBatch.type === 'company') { const documents = {}; companyDocsList.forEach(docName => { documents[docName] = { initialDate: 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }; }); await addDoc(collection(db, "mobilizations"), { companyId: currentCompanyId, batchId: batchRef.id, name: 'Documentação da Empresa', type: 'company', documents, analysisForecastDate: 'N/A', lastModified: new Date().toISOString() }); } } catch (error) { console.error("Erro ao criar lote:", error); showToast("Erro ao criar lote.", "error"); } }
+        async function addMobilization(e) { e.preventDefault(); const form = e.target; const collaboratorName = form.collaboratorName.value.trim(); if (!collaboratorName) return showToast('Nome do colaborador é obrigatório.', 'error'); const documents = {}, docDates = []; document.querySelectorAll('.document-input').forEach(input => { const date = input.value.trim() || 'N/A'; docDates.push(date); documents[input.dataset.docName] = { initialDate: date, status: 'pending', issue: '', correctionDate: '', approvalDate: '' }; }); try { await addDoc(collection(db, "mobilizations"), { companyId: currentCompanyId, batchId: currentBatchId, name: collaboratorName, type: 'collaborator', documents, analysisForecastDate: calculateForecastDate(docDates), status: 'active', lastModified: new Date().toISOString() }); showToast("Colaborador adicionado com sucesso!"); form.reset(); } catch (error) { console.error("Erro ao adicionar mobilização: ", error); showToast("Erro ao salvar colaborador.", "error"); } }
+        async function updateAnalysis(e) { e.preventDefault(); if (!currentMobilizationId) return; try { const mobilizationRef = doc(db, "mobilizations", currentMobilizationId); const q = query(collection(db, "mobilizations"), where("__name__", "==", currentMobilizationId)); const mobDoc = (await getDocs(q)).docs[0]; const currentData = mobDoc.data(); const finalDocuments = { ...currentData.documents }; document.querySelectorAll('.analysis-card').forEach(card => { const docName = card.dataset.docName; if (finalDocuments[docName]) { const previousStatus = currentData.documents[docName].status; const newStatus = card.querySelector('.analysis-status').value; const currentIssue = currentData.documents[docName].issue || ''; const currentCorrectionDate = currentData.documents[docName].correctionDate || ''; if (previousStatus === 'rejected' && newStatus !== 'rejected') { const historyEntry = { issue: currentIssue, correctionDate: currentCorrectionDate, rejectionDate: currentData.documents[docName].lastAnalysisDate || new Date().toLocaleDateString('pt-BR') }; if (!finalDocuments[docName].rejectionHistory) { finalDocuments[docName].rejectionHistory = []; } finalDocuments[docName].rejectionHistory.push(historyEntry); } finalDocuments[docName].status = newStatus; finalDocuments[docName].issue = card.querySelector('.analysis-issue')?.value.trim() || ''; finalDocuments[docName].correctionDate = card.querySelector('.analysis-correction-date')?.value.trim() || ''; finalDocuments[docName].approvalDate = card.querySelector('.analysis-approval-date')?.value.trim() || ''; finalDocuments[docName].lastAnalysisDate = new Date().toLocaleDateString('pt-BR'); } }); await updateDoc(mobilizationRef, { documents: finalDocuments, lastModified: new Date().toISOString() }); showToast("Análise salva com sucesso!"); switchView('list'); } catch (error) { console.error("Erro ao atualizar análise: ", error); showToast("Erro ao salvar análise.", "error"); } }
+        async function handleUpdateMobilization(e) { e.preventDefault(); if (!currentMobilizationId) return; try { const mobilizationRef = doc(db, "mobilizations", currentMobilizationId); const q = query(collection(db, "mobilizations"), where("__name__", "==", currentMobilizationId)); const mobDoc = (await getDocs(q)).docs[0]; const currentData = mobDoc.data(); const finalDocuments = { ...currentData.documents }; const docDates = []; document.querySelectorAll('.document-input-edit').forEach(input => { const docName = input.dataset.docName; const date = input.value.trim() || 'N/A'; docDates.push(date); if(finalDocuments[docName]) { finalDocuments[docName].initialDate = date; } else { finalDocuments[docName] = { initialDate: date, status: 'pending', issue: '', correctionDate: '', approvalDate: '' }; } }); const newForecastDate = calculateForecastDate(docDates); await updateDoc(mobilizationRef, { documents: finalDocuments, analysisForecastDate: newForecastDate, lastModified: new Date().toISOString() }); showToast("Mobilização atualizada com sucesso!"); switchView('list'); } catch (error) { console.error("Error updating mobilization:", error); showToast("Erro ao salvar as alterações.", "error"); } }
+        async function handleCollaboratorStatusChange(mobilizationId, newStatus) { try { const mobilizationRef = doc(db, "mobilizations", mobilizationId); await updateDoc(mobilizationRef, { status: newStatus, lastModified: new Date().toISOString() }); showToast(`Colaborador marcado como ${newStatus === 'inactive' ? 'inativo' : 'ativo'}.`); } catch (error) { console.error("Erro ao atualizar status do colaborador:", error); showToast("Falha ao atualizar o status.", "error"); } }
         function requestDeleteItem(type, id, parentId = null) { itemToDelete = { type, id, parentId }; let message = `Tem certeza que deseja excluir? Esta ação é irreversível.`; if(type === 'company') message += ' Todos os lotes e mobilizações associados também serão excluídos.'; if(type === 'batch') message += ' Todas as mobilizações neste lote também serão excluídas.'; document.getElementById('modal-body').textContent = message; confirmationModal.classList.remove('hidden'); }
         async function performDelete() { const { type, id } = itemToDelete; if (!type || !id) return; try { if (type === 'company') { const mobsQuery = query(collection(db, "mobilizations"), where("companyId", "==", id)); const mobsSnapshot = await getDocs(mobsQuery); const mobDeletes = mobsSnapshot.docs.map(d => deleteDoc(d.ref)); await Promise.all(mobDeletes); const batchesQuery = query(collection(db, "mobilizationBatches"), where("companyId", "==", id)); const batchesSnapshot = await getDocs(batchesQuery); const batchDeletes = batchesSnapshot.docs.map(d => deleteDoc(d.ref)); await Promise.all(batchDeletes); await deleteDoc(doc(db, "companies", id)); } else if (type === 'batch') { const mobsQuery = query(collection(db, "mobilizations"), where("batchId", "==", id)); const mobsSnapshot = await getDocs(mobsQuery); const mobDeletes = mobsSnapshot.docs.map(d => deleteDoc(d.ref)); await Promise.all(mobDeletes); await deleteDoc(doc(db, "mobilizationBatches", id)); } else if (type === 'mobilization') { await deleteDoc(doc(db, "mobilizations", id)); } showToast("Item excluído com sucesso."); } catch (error) { console.error("Erro ao excluir: ", error); showToast("Erro ao excluir item.", "error"); } confirmationModal.classList.add('hidden'); }
         function setupPresenceListener() { const onlineCounterEl = document.getElementById('online-counter'); const myConnectionRef = ref(rtdb, '.info/connected'); const presenceRef = ref(rtdb, 'presence'); const sessionId = Math.random().toString(36).substring(2, 11); const mySessionRef = ref(rtdb, `presence/${sessionId}`); onValue(myConnectionRef, (snap) => { if (snap.val() === true) { onDisconnect(mySessionRef).remove(); set(mySessionRef, true); } }); onValue(presenceRef, (snap) => { onlineCounterEl.textContent = snap.numChildren(); }); }
         function parseFile(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (event) => { try { if (file.name.endsWith('.csv')) { const text = event.target.result; Papa.parse(text, { complete: (results) => resolve(extractDataFromRows(results.data, file.name)), error: (err) => reject(err), }); } else { const workbook = XLSX.read(event.target.result, { type: 'binary', cellDates: true }); const sheetName = workbook.SheetNames.find(name => !name.toLowerCase().includes('planilha2')) || workbook.SheetNames[0]; const worksheet = workbook.Sheets[sheetName]; const dataGrid = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null, raw: false }); const merges = worksheet['!merges'] || []; merges.forEach(merge => { const { s, e } = merge; const value = dataGrid[s.r] ? dataGrid[s.r][s.c] : null; if (value === null) return; for (let R = s.r; R <= e.r; ++R) { for (let C = s.c; C <= e.c; ++C) { if (!dataGrid[R]) dataGrid[R] = []; dataGrid[R][C] = value; } } }); resolve(extractDataFromRows(dataGrid, file.name)); } } catch(err) { reject(err); } }; if (file.name.endsWith('.csv')) { reader.readAsText(file); } else { reader.readAsBinaryString(file); } }); }
         function extractDataFromRows(data, fileName) { const parsed = { companyName: '', contractNumber: '', companyDocs: {}, collaborators: [] }; const nameMatch = fileName.match(/(\d+)\s(.+?)(?:\s-\s.*)?\.(csv|xlsx|xls)/i); if (nameMatch) { parsed.contractNumber = nameMatch[1]; parsed.companyName = nameMatch[2].replace(/_/g, ' ').trim(); } let collaboratorHeaderIndex = -1; let headers = []; data.forEach((row, rowIndex) => { if (!row || row.length === 0 || row.every(cell => cell === null || String(cell).trim() === '')) return; const firstCell = String(row[0] || '').trim(); if (companyDocsList.includes(firstCell)) { parsed.companyDocs[firstCell] = formatImportDate(row[2] || 'N/A'); } if (firstCell.toLowerCase().includes('colaborador')) { collaboratorHeaderIndex = rowIndex; headers = row.map(h => String(h || '').trim()); } if (collaboratorHeaderIndex !== -1 && rowIndex > collaboratorHeaderIndex + 1) { const collaboratorName = String(row[0] || '').trim(); if (collaboratorName && collaboratorName.length > 2 && !collaboratorName.toLowerCase().includes('exemplo')) { const collaborator = { name: collaboratorName, documents: {} }; headers.forEach((header, colIndex) => { if (colIndex > 0 && header) { const matchingDoc = collaboratorDocsList.find(doc => header.toLowerCase().includes(doc.split(' ')[0].toLowerCase().replace('+',''))); if(matchingDoc) { collaborator.documents[matchingDoc] = formatImportDate(row[colIndex] || 'N/A'); } } }); if(Object.keys(collaborator.documents).length > 0) { parsed.collaborators.push(collaborator); } } } }); return parsed; }
         async function renderImportPreview(allParsedData) { importPreviewArea.innerHTML = ''; parsedDataForImport = allParsedData; const companiesOptions = allCompaniesCache.map(c => `<option value="${c.id}" data-contract="${c.contractNumber}">${c.name}</option>`).join(''); allParsedData.forEach((data, index) => { const card = document.createElement('div'); card.className = 'bg-white p-4 rounded-lg shadow-sm border'; card.dataset.index = index; const companyDocsHTML = Object.entries(data.companyDocs).map(([name, date]) => `<div class="flex justify-between text-sm"><span class="text-gray-600">${name}:</span> <span class="font-medium">${date}</span></div>`).join(''); const collaboratorsHTML = data.collaborators.map(c => `<tr class="border-b"><td class="py-2 pr-2">${c.name}</td><td class="py-2 pl-2 text-right">${Object.values(c.documents).filter(d => d !== 'N/A').length} docs</td></tr>`).join(''); const matchedCompany = allCompaniesCache.find(c => c.contractNumber === data.contractNumber); card.innerHTML = `<h3 class="font-bold text-lg mb-4">Verificação do Arquivo: ${data.fileName}</h3><div><label class="block text-sm font-medium">Associar à Empresa</label><select class="import-company-select mt-1 block w-full border-gray-300 rounded-md"><option value="new">-- Criar Nova Empresa --</option>${companiesOptions}</select></div><div class="import-new-company-fields grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"><div><label class="block text-sm font-medium">Nome da Empresa</label><input type="text" value="${data.companyName}" class="import-company-name mt-1 block w-full border-gray-300 rounded-md"></div><div><label class="block text-sm font-medium">Nº do Contrato</label><input type="text" value="${data.contractNumber}" class="import-contract-number mt-1 block w-full border-gray-300 rounded-md"></div></div><div class="mt-4"><h4 class="font-semibold">Documentos da Empresa Encontrados:</h4><div class="mt-2 space-y-1">${companyDocsHTML || '<p class="text-sm text-gray-500">Nenhum</p>'}</div></div><div class="mt-4"><h4 class="font-semibold">Colaboradores Encontrados (${data.collaborators.length}):</h4><div class="mt-2 border rounded-md max-h-48 overflow-y-auto p-2"><table class="w-full text-sm"><tbody>${collaboratorsHTML || '<tr><td>Nenhum</td></tr>'}</tbody></table></div></div>`; importPreviewArea.appendChild(card); const select = card.querySelector('.import-company-select'); if (matchedCompany) { select.value = matchedCompany.id; } select.dispatchEvent(new Event('change')); }); importActions.classList.toggle('hidden', allParsedData.length === 0); }
-        async function handleImportData() { importFinalBtn.disabled = true; importFinalBtn.textContent = 'Importando...'; try { document.querySelectorAll('#import-preview-area > div').forEach((card, index) => { const select = card.querySelector('.import-company-select'); const selectedOption = select.options[select.selectedIndex]; parsedDataForImport[index].selectedCompanyId = select.value === 'new' ? null : select.value; if (select.value === 'new') { parsedDataForImport[index].companyName = card.querySelector('.import-company-name').value; parsedDataForImport[index].contractNumber = card.querySelector('.import-contract-number').value; } else { parsedDataForImport[index].companyName = selectedOption.text; parsedDataForImport[index].contractNumber = selectedOption.dataset.contract; } }); for (const data of parsedDataForImport) { if (!data.companyName || !data.contractNumber) continue; let companyId = data.selectedCompanyId; if (!companyId) { const q = query(collection(db, "companies"), where("contractNumber", "==", data.contractNumber)); const existingCompany = await getDocs(q); if (existingCompany.empty) { const newCompanyRef = await addDoc(collection(db, "companies"), { name: data.companyName, contractNumber: data.contractNumber }); companyId = newCompanyRef.id; } else { companyId = existingCompany.docs[0].id; } } const today = new Date().toISOString().split('T')[0]; const batch = writeBatch(db); if (Object.keys(data.companyDocs).length > 0) { const companyBatchRef = doc(collection(db, "mobilizationBatches")); batch.set(companyBatchRef, { companyId, date: today, description: `Docs da empresa importados de ${data.fileName}`, type: 'company' }); const companyMobRef = doc(collection(db, "mobilizations")); const documents = {}; companyDocsList.forEach(docName => { documents[docName] = { initialDate: data.companyDocs[docName] || 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }}); batch.set(companyMobRef, { companyId, batchId: companyBatchRef.id, name: 'Documentação da Empresa', type: 'company', documents, analysisForecastDate: calculateForecastDate(Object.values(documents).map(d=>d.initialDate)) }); } if (data.collaborators.length > 0) { const collabBatchRef = doc(collection(db, "mobilizationBatches")); batch.set(collabBatchRef, { companyId, date: today, description: `Colaboradores importados de ${data.fileName}`, type: 'collaborators' }); data.collaborators.forEach(collab => { const collabMobRef = doc(collection(db, "mobilizations")); const documents = {}; collaboratorDocsList.forEach(docName => { documents[docName] = { initialDate: collab.documents[docName] || 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }}); batch.set(collabMobRef, { companyId, batchId: collabBatchRef.id, name: collab.name, type: 'collaborator', documents, analysisForecastDate: calculateForecastDate(Object.values(documents).map(d=>d.initialDate)), status: 'active' }); }); } await batch.commit(); showToast(`Dados para '${data.companyName}' importados com sucesso!`); } importPreviewArea.innerHTML = ''; importActions.classList.add('hidden'); fileInput.value = ''; handleTabClick('dashboard'); } catch (error) { console.error("Erro na importação final:", error); showToast("Ocorreu um erro durante a importação.", "error"); } finally { importFinalBtn.disabled = false; importFinalBtn.textContent = 'Importar Dados Verificados'; } }
+        async function handleImportData() { importFinalBtn.disabled = true; importFinalBtn.textContent = 'Importando...'; try { document.querySelectorAll('#import-preview-area > div').forEach((card, index) => { const select = card.querySelector('.import-company-select'); const selectedOption = select.options[select.selectedIndex]; parsedDataForImport[index].selectedCompanyId = select.value === 'new' ? null : select.value; if (select.value === 'new') { parsedDataForImport[index].companyName = card.querySelector('.import-company-name').value; parsedDataForImport[index].contractNumber = card.querySelector('.import-contract-number').value; } else { parsedDataForImport[index].companyName = selectedOption.text; parsedDataForImport[index].contractNumber = selectedOption.dataset.contract; } }); for (const data of parsedDataForImport) { if (!data.companyName || !data.contractNumber) continue; let companyId = data.selectedCompanyId; if (!companyId) { const q = query(collection(db, "companies"), where("contractNumber", "==", data.contractNumber)); const existingCompany = await getDocs(q); if (existingCompany.empty) { const newCompanyRef = await addDoc(collection(db, "companies"), { name: data.companyName, contractNumber: data.contractNumber }); companyId = newCompanyRef.id; } else { companyId = existingCompany.docs[0].id; } } const today = new Date().toISOString().split('T')[0]; const batch = writeBatch(db); if (Object.keys(data.companyDocs).length > 0) { const companyBatchRef = doc(collection(db, "mobilizationBatches")); batch.set(companyBatchRef, { companyId, date: today, description: `Docs da empresa importados de ${data.fileName}`, type: 'company' }); const companyMobRef = doc(collection(db, "mobilizations")); const documents = {}; companyDocsList.forEach(docName => { documents[docName] = { initialDate: data.companyDocs[docName] || 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }}); batch.set(companyMobRef, { companyId, batchId: companyBatchRef.id, name: 'Documentação da Empresa', type: 'company', documents, analysisForecastDate: calculateForecastDate(Object.values(documents).map(d=>d.initialDate)), lastModified: new Date().toISOString() }); } if (data.collaborators.length > 0) { const collabBatchRef = doc(collection(db, "mobilizationBatches")); batch.set(collabBatchRef, { companyId, date: today, description: `Colaboradores importados de ${data.fileName}`, type: 'collaborators' }); data.collaborators.forEach(collab => { const collabMobRef = doc(collection(db, "mobilizations")); const documents = {}; collaboratorDocsList.forEach(docName => { documents[docName] = { initialDate: collab.documents[docName] || 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }}); batch.set(collabMobRef, { companyId, batchId: collabBatchRef.id, name: collab.name, type: 'collaborator', documents, analysisForecastDate: calculateForecastDate(Object.values(documents).map(d=>d.initialDate)), status: 'active', lastModified: new Date().toISOString() }); }); } await batch.commit(); showToast(`Dados para '${data.companyName}' importados com sucesso!`); } importPreviewArea.innerHTML = ''; importActions.classList.add('hidden'); fileInput.value = ''; handleTabClick('dashboard'); } catch (error) { console.error("Erro na importação final:", error); showToast("Ocorreu um erro durante a importação.", "error"); } finally { importFinalBtn.disabled = false; importFinalBtn.textContent = 'Importar Dados Verificados'; } }
         function exportTemplateCSV() { const companyHeader = ["Documentação empresa", "", "Data de Carregamento"]; const companyRows = companyDocsList.map(doc => [doc, "", ""]); const collaboratorHeader = ["Colaborador", ...collaboratorDocsList]; const collaboratorExampleRow = ["Exemplo Nome Sobrenome", ...collaboratorDocsList.map(() => "dd/mm/aaaa ou N/A")]; const csvData = [ companyHeader, ...companyRows, [], [], collaboratorHeader, collaboratorExampleRow ]; const csv = Papa.unparse(csvData); const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); const url = URL.createObjectURL(blob); link.setAttribute("href", url); link.setAttribute("download", "modelo_importacao.csv"); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -863,6 +892,7 @@
             approvedListEl = document.getElementById('approved-list');
             exportApprovedBtn = document.getElementById('export-approved-btn');
             themeToggle = document.getElementById('theme-toggle');
+            const sortDashboardBtn = document.getElementById('sort-dashboard-btn');
 
             document.getElementById('add-company-form').addEventListener('submit', addCompany);
             document.getElementById('add-batch-form').addEventListener('submit', addMobilizationBatch);
@@ -877,6 +907,7 @@
             document.getElementById('add-batch-btn').addEventListener('click', () => addBatchModal.classList.remove('hidden'));
             document.getElementById('cancel-batch-btn').addEventListener('click', () => addBatchModal.classList.add('hidden'));
             document.getElementById('hide-approved-toggle').addEventListener('change', renderDashboardReport);
+            sortDashboardBtn.addEventListener('click', () => { dashboardSortAsc = !dashboardSortAsc; renderDashboardReport(); });
             dashboardReportEl.addEventListener('click', e => { const card = e.target.closest('.dashboard-card-clickable'); if (card) { const { id, name, contract } = card.dataset; currentCompanyId = id; currentCompanyName = name; currentCompanyContract = contract; document.getElementById('batch-company-name').textContent = name; document.getElementById('batch-company-contract').textContent = contract; listenForMobilizationBatches(id); switchView('batch'); } });
             companyListEl.addEventListener('click', e => { const viewBtn = e.target.closest('.view-batches-btn'); if (viewBtn) { const { id, name, contract } = viewBtn.dataset; currentCompanyId = id; currentCompanyName = name; currentCompanyContract = contract; document.getElementById('batch-company-name').textContent = name; document.getElementById('batch-company-contract').textContent = contract; listenForMobilizationBatches(id); switchView('batch'); } const deleteBtn = e.target.closest('.delete-company-btn'); if (deleteBtn) requestDeleteItem('company', deleteBtn.dataset.id); });
             mobilizationBatchListEl.addEventListener('click', e => { const viewBtn = e.target.closest('.view-mobilizations-btn'); if (viewBtn) { const { id, date, description, type } = viewBtn.dataset; currentBatchId = id; document.getElementById('list-batch-date').textContent = date; document.getElementById('list-batch-description').textContent = description || 'Sem descrição'; const addFormContainer = document.getElementById('add-mobilization-form-container'); if (type === 'company') { addFormContainer.classList.add('hidden'); } else { addFormContainer.classList.remove('hidden'); updateDocumentListUI('collaborator'); } listenForMobilizations(id); switchView('list'); } const deleteBtn = e.target.closest('.delete-batch-btn'); if (deleteBtn) requestDeleteItem('batch', deleteBtn.dataset.id, currentCompanyId); });
@@ -927,3 +958,6 @@
     </script>
 </body>
 </html>
+
+
+
