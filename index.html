@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Mobilização de Empresas v2.3</title>
+    <title>Gestão de Mobilização de Empresas v2.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -67,7 +67,8 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .approved-card {
-            background-color: #f0fdf4; border-left-color: #22c55e;
+            background-color: #dcfce7; /* green-100 */
+            border-left-color: #22c55e;
         }
         html.dark .approved-card {
             background-color: #162a22; border-left-color: #22c55e;
@@ -214,7 +215,7 @@
                 <div id="analysis-detail-section" class="hidden"><button id="back-to-mobilizations" class="mb-6 inline-flex items-center px-4 py-2 border border-[--border-color] shadow-sm text-sm font-medium rounded-md text-[--text-secondary] bg-[--bg-secondary] hover:bg-slate-50 dark:hover:bg-slate-800">&larr; Voltar</button><div class="bg-[--bg-secondary] p-6 rounded-lg shadow-md border border-[--border-color]"><h2 class="text-2xl font-bold mb-1">Análise de Documentos</h2><p id="analysis-mobilization-name" class="text-[--text-secondary]"></p><p class="text-sm text-blue-600 dark:text-blue-400 font-semibold mt-2">Previsão de Análise: <span id="analysis-forecast-date"></span></p><form id="analysis-form" class="mt-6"><div id="analysis-document-list" class="space-y-6"></div><button type="submit" class="mt-8 w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">Salvar Alterações da Análise</button></form></div></div>
                 
                 <footer class="text-center text-sm text-[--text-secondary] mt-12 pb-4">
-                    <p id="app-version">Versão 2.3.0 (2025-10-06)</p>
+                    <p id="app-version">Versão 2.5.2 (2025-10-09)</p>
                 </footer>
             </main>
         </div>
@@ -252,7 +253,7 @@
         let currentCompanyId = null, currentCompanyName = null, currentCompanyContract = null, currentBatchId = null, currentMobilizationId = null;
         let itemToDelete = { type: null, id: null, parentId: null };
         let unsubscribeCompanies = null, unsubscribeMobilizationBatches = null, unsubscribeMobilizations = null;
-        let parsedDataForImport = [], allCompaniesCache = [], awaitingAnalysisCache = {};
+        let parsedDataForImport = [], allCompaniesCache = [], allMobilizations = [];
         let biChart = null;
         let dashboardSortAsc = false;
 
@@ -268,8 +269,9 @@
         function formatImportDate(dateValue) { if (!dateValue || typeof dateValue === 'string' && dateValue.toLowerCase().includes('n/a')) return 'N/A'; let date; if (typeof dateValue === 'number') { date = new Date(Math.round((dateValue - 25569) * 86400 * 1000)); } else if (typeof dateValue === 'string') { const cleanedDate = dateValue.trim(); const parts = cleanedDate.split(/[/-]/); if (parts.length !== 3) return 'N/A'; if (parts[0].length === 4) { date = new Date(parts[0], parseInt(parts[1],10) - 1, parts[2]); } else if (parts[2].length === 4) { date = new Date(parts[2], parseInt(parts[1],10) - 1, parts[0]); } else { return 'N/A'; } } else if (dateValue instanceof Date) { date = dateValue; } else { return 'N/A'; } if (isNaN(date.getTime())) return 'N/A'; const day = String(date.getDate()).padStart(2, '0'); const month = String(date.getMonth() + 1).padStart(2, '0'); const year = date.getFullYear(); return `${day}/${month}/${year}`; }
         function calculateForecastDate(dates) { const validDates = dates.map(dateStr => { if (!dateStr || ['n/a', 'na'].includes(dateStr.toLowerCase())) return null; const parts = dateStr.split('/'); if (parts.length !== 3) return null; const d = new Date(parts[2], parseInt(parts[1], 10) - 1, parts[0]); return isNaN(d) ? null : d; }).filter(Boolean); if (validDates.length === 0) return 'N/A'; const lastDate = new Date(Math.max(...validDates)); let businessDays = 2; let forecastDate = new Date(lastDate); while (businessDays > 0) { forecastDate.setDate(forecastDate.getDate() + 1); if (forecastDate.getDay() % 6 !== 0) businessDays--; } return forecastDate.toLocaleDateString('pt-BR'); }
         function calculateReanalysisDate() { let businessDays = 2, forecastDate = new Date(); while (businessDays > 0) { forecastDate.setDate(forecastDate.getDate() + 1); if (forecastDate.getDay() % 6 !== 0) businessDays--; } return forecastDate.toLocaleDateString('pt-BR'); }
+        function calculateForecastFromDate(baseDateString) { if (!baseDateString) return 'N/A'; let forecastDate = new Date(baseDateString); if (isNaN(forecastDate.getTime())) return 'N/A'; let businessDays = 2; while (businessDays > 0) { forecastDate.setDate(forecastDate.getDate() + 1); if (forecastDate.getDay() % 6 !== 0) { businessDays--; } } return forecastDate.toLocaleDateString('pt-BR'); }
         function getStatusColorClass(status) { switch (status) { case 'approved': return 'border-green-500'; case 'rejected': return 'border-red-500'; default: return 'border-yellow-500'; } }
-        async function fetchAllData() { const companiesQuery = query(collection(db, "companies")); const companiesSnapshot = await getDocs(companiesQuery); const allCompanies = companiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); const batchesQuery = query(collection(db, "mobilizationBatches")); const batchesSnapshot = await getDocs(batchesQuery); const allBatches = batchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); const mobilizationsQuery = query(collection(db, "mobilizations")); const mobSnapshot = await getDocs(mobilizationsQuery); const allMobilizations = mobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); allCompaniesCache = allCompanies.sort((a,b) => a.name.localeCompare(b.name)); return { allCompanies, allBatches, allMobilizations }; }
+        async function fetchAllData() { const companiesQuery = query(collection(db, "companies")); const companiesSnapshot = await getDocs(companiesQuery); allCompaniesCache = companiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => a.name.localeCompare(b.name)); const mobilizationsQuery = query(collection(db, "mobilizations")); const mobSnapshot = await getDocs(mobilizationsQuery); allMobilizations = mobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); return { allCompanies: allCompaniesCache, allMobilizations }; }
         function switchView(view) { Object.values(allSections).forEach(s => s.classList.add('hidden')); allSections[view].classList.remove('hidden'); }
         function handleTabClick(targetId) { 
             switchView('main');
@@ -405,79 +407,63 @@
                 }
 
                 const reportData = allCompanies.map(company => {
-                    const companyMobilizations = allMobilizations.filter(mob => mob.companyId === company.id && mob.status !== 'inactive');
-                    const pendingCollaboratorNames = new Set();
+                    const companyAllMobilizations = allMobilizations.filter(mob => mob.companyId === company.id);
+                    const companyActiveMobilizations = companyAllMobilizations.filter(mob => mob.status !== 'inactive');
+                    const collaboratorMobilizations = companyActiveMobilizations.filter(mob => mob.type === 'collaborator');
+
+                    let approvedCollaboratorCount = 0;
+                    let pendingCollaboratorCount = 0;
+
+                    collaboratorMobilizations.forEach(mob => {
+                        const relevantDocs = Object.values(mob.documents).filter(d => d.initialDate && d.initialDate.toLowerCase() !== 'n/a');
+                        if (relevantDocs.length > 0 && relevantDocs.every(d => d.status === 'approved')) {
+                            approvedCollaboratorCount++;
+                        } else {
+                            pendingCollaboratorCount++;
+                        }
+                    });
+
+                    let totalApplicableDocuments = 0;
+                    let totalApprovedDocuments = 0;
                     let totalPendingDocuments = 0;
-                    const totalCollaboratorNames = new Set();
-                    const collaboratorStatus = {};
+                    companyActiveMobilizations.forEach(mob => {
+                        Object.values(mob.documents).forEach(doc => {
+                            if (doc.initialDate && doc.initialDate.toLowerCase() !== 'n/a') {
+                                totalApplicableDocuments++;
+                                if (doc.status === 'approved') {
+                                    totalApprovedDocuments++;
+                                } else if (doc.status === 'pending' || doc.status === 'rejected') {
+                                    totalPendingDocuments++;
+                                }
+                            }
+                        });
+                    });
                     
                     let lastUpdate = null;
-                    if (companyMobilizations.length > 0) {
-                        const updateTimes = companyMobilizations
+                    if (companyAllMobilizations.length > 0) {
+                        const updateTimes = companyAllMobilizations
                             .map(mob => mob.lastModified ? new Date(mob.lastModified) : null)
                             .filter(date => date !== null);
                         if (updateTimes.length > 0) {
                             lastUpdate = new Date(Math.max.apply(null, updateTimes));
                         }
                     }
-
-                    let totalApplicableDocuments = 0;
-                    let totalApprovedDocuments = 0;
-
-                    companyMobilizations.forEach(mob => {
-                        let collaboratorHasIssue = false;
-                        if (mob.type === 'collaborator') {
-                            totalCollaboratorNames.add(mob.name);
-                            if (!collaboratorStatus[mob.name]) {
-                                collaboratorStatus[mob.name] = { total: 0, approved: 0 };
-                            }
-                        }
-                        Object.values(mob.documents).forEach(doc => {
-                            if (doc.initialDate && doc.initialDate.toLowerCase() !== 'n/a') {
-                                totalApplicableDocuments++;
-                                if (doc.status === 'approved') {
-                                    totalApprovedDocuments++;
-                                }
-
-                                if (mob.type === 'collaborator') {
-                                    collaboratorStatus[mob.name].total++;
-                                }
-                                if (doc.status === 'rejected' || doc.status === 'pending') {
-                                    totalPendingDocuments++;
-                                    if (mob.type === 'collaborator') {
-                                        collaboratorHasIssue = true;
-                                    }
-                                } else if (doc.status === 'approved' && mob.type === 'collaborator') {
-                                    collaboratorStatus[mob.name].approved++;
-                                }
-                            }
-                        });
-                        if (collaboratorHasIssue) {
-                            pendingCollaboratorNames.add(mob.name);
-                        }
-                    });
-
-                    let approvedCollaboratorCount = 0;
-                    Object.values(collaboratorStatus).forEach(status => {
-                        if (status.total > 0 && status.total === status.approved) {
-                            approvedCollaboratorCount++;
-                        }
-                    });
                     
                     const progressPercentage = totalApplicableDocuments > 0 ? (totalApprovedDocuments / totalApplicableDocuments) * 100 : 0;
 
                     return {
                         ...company,
-                        pendingCollaboratorCount: pendingCollaboratorNames.size,
-                        totalPendingDocuments: totalPendingDocuments,
-                        approvedCollaboratorCount: approvedCollaboratorCount,
-                        totalCollaborators: totalCollaboratorNames.size,
+                        pendingCollaboratorCount,
+                        totalPendingDocuments,
+                        approvedCollaboratorCount,
+                        totalCollaborators: collaboratorMobilizations.length,
                         totalApplicableDocuments,
                         totalApprovedDocuments,
                         progressPercentage,
-                        lastUpdate: lastUpdate
+                        lastUpdate
                     };
                 });
+
 
                 dashboardReportEl.innerHTML = '';
                 const hideApproved = document.getElementById('hide-approved-toggle').checked;
@@ -536,30 +522,30 @@
                     </div>`;
 
                     card.innerHTML = `
-                        <div>
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h3 class="font-bold text-[--text-primary] text-lg leading-tight">${data.name}</h3>
-                                    <p class="text-sm text-[--text-secondary] mt-1">Contrato: ${data.contractNumber}</p>
+                            <div>
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-bold text-[--text-primary] text-lg leading-tight">${data.name}</h3>
+                                        <p class="text-sm text-[--text-secondary] mt-1">Contrato: ${data.contractNumber}</p>
+                                    </div>
+                                    <span class="flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${pendenciesColor}">
+                                       ${pendenciesIcon} ${data.totalPendingDocuments} pendente(s)
+                                    </span>
                                 </div>
-                                <span class="flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${pendenciesColor}">
-                                   ${pendenciesIcon} ${data.totalPendingDocuments} pendente(s)
-                                </span>
-                            </div>
 
-                            <div class="mt-4">
-                                <div class="flex justify-between items-center text-sm text-[--text-secondary] mb-1">
-                                    <span>Progresso Geral</span>
-                                    <span class="font-semibold text-[--text-primary]">${data.totalApprovedDocuments} / ${data.totalApplicableDocuments}</span>
+                                <div class="mt-4">
+                                    <div class="flex justify-between items-center text-sm text-[--text-secondary] mb-1">
+                                        <span>Progresso Geral</span>
+                                        <span class="font-semibold text-[--text-primary]">${data.totalApprovedDocuments} / ${data.totalApplicableDocuments}</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                        <div class="${progressColor} h-2 rounded-full transition-all duration-500" style="width: ${data.progressPercentage}%"></div>
+                                    </div>
                                 </div>
-                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                    <div class="${progressColor} h-2 rounded-full transition-all duration-500" style="width: ${data.progressPercentage}%"></div>
-                                </div>
+                                ${lastUpdateHTML}
+                                ${summaryHTML}
                             </div>
-                            ${lastUpdateHTML}
-                            ${summaryHTML}
-                        </div>
-                    `;
+                        `;
 
                     dashboardReportEl.appendChild(card);
                 });
@@ -625,28 +611,35 @@
                     const companyMobilizations = activeMobilizations.filter(m => m.companyId === company.id);
                     const awaitingItems = companyMobilizations.reduce((acc, mob) => {
                         const docs = Object.keys(mob.documents).filter(docName => mob.documents[docName].status === 'pending' && mob.documents[docName].initialDate.toLowerCase() !== 'n/a');
-                        if (docs.length > 0) acc.push({ mobilizationName: mob.name, documents: docs });
+                        if (docs.length > 0) acc.push({ mobilizationName: mob.name, documents: docs, createdAt: mob.createdAt, lastModified: mob.lastModified });
                         return acc;
                     }, []);
 
                     const rejectedItems = companyMobilizations.reduce((acc, mob) => {
-                        const docs = Object.entries(mob.documents).filter(([,docData]) => docData.status === 'rejected' && docData.initialDate.toLowerCase() !== 'n/a').map(([docName, docData]) => ({docName, issue: docData.issue || 'N/A'}));
-                        if (docs.length > 0) acc.push({ mobilizationName: mob.name, originalForecast: mob.analysisForecastDate, pendencies: docs });
+                        const docs = Object.entries(mob.documents).filter(([,docData]) => docData.status === 'rejected' && docData.initialDate.toLowerCase() !== 'n/a').map(([docName, docData]) => ({docName, issue: docData.issue || 'N/A', pendencyDate: docData.lastAnalysisDate}));
+                        if (docs.length > 0) acc.push({ mobilizationName: mob.name, originalForecast: mob.analysisForecastDate, pendencies: docs, createdAt: mob.createdAt });
                         return acc;
                     }, []);
 
                     if (awaitingItems.length > 0) {
                         companyContent += `<h4 class="text-md font-semibold mt-4 text-blue-800 dark:text-blue-400">Aguardando Análise</h4>`;
                         awaitingItems.forEach(mob => {
-                            const docsHTML = mob.documents.map(docName => `<li class="flex items-start text-sm"><input type="checkbox" class="report-item-checkbox mt-1 mr-3 rounded" data-type="awaiting" data-mobilization-name="${mob.mobilizationName}" data-doc-name="${docName}"><span>${docName}</span></li>`).join('');
-                            companyContent += `<div class="mt-2"><h5 class="font-semibold">${mob.mobilizationName}</h5><ul class="mt-1 space-y-1 ml-7">${docsHTML}</ul></div>`;
+                            const lastUpdateDate = mob.lastModified ? new Date(mob.lastModified) : (mob.createdAt ? new Date(mob.createdAt) : new Date());
+                            const forecastDate = calculateForecastFromDate(lastUpdateDate.toISOString());
+                            const updateInfo = ` (Atualizado em: ${lastUpdateDate.toLocaleDateString('pt-BR')} - Previsão: ${forecastDate})`;
+                            const docsHTML = mob.documents.map(docName => `<li class="flex items-start text-sm"><input type="checkbox" class="report-item-checkbox mt-1 mr-3 rounded" data-type="awaiting" data-mobilization-name="${mob.mobilizationName}" data-doc-name="${docName}" data-last-modified="${mob.lastModified || mob.createdAt || ''}"><span>${docName}</span></li>`).join('');
+                            companyContent += `<div class="mt-2"><h5 class="font-semibold">${mob.mobilizationName}<span class="text-sm font-normal text-[--text-secondary]">${updateInfo}</span></h5><ul class="mt-1 space-y-1 ml-7">${docsHTML}</ul></div>`;
                         });
                     }
                     if (rejectedItems.length > 0) {
                         companyContent += `<h4 class="text-md font-semibold mt-4 text-red-800 dark:text-red-400">Com Pendência</h4>`;
                         rejectedItems.forEach(mob => {
-                            const pendenciesHTML = mob.pendencies.map(p => `<li class="flex items-start text-sm"><input type="checkbox" class="report-item-checkbox mt-1 mr-3 rounded" data-type="rejected" data-mobilization-name="${mob.mobilizationName}" data-doc-name="${p.docName}" data-issue="${p.issue}" data-original-forecast="${mob.originalForecast}"><span><b>${p.docName}:</b> ${p.issue}</span></li>`).join('');
-                            companyContent += `<div class="mt-2"><h5 class="font-semibold">${mob.mobilizationName}</h5><ul class="mt-1 space-y-1 ml-7">${pendenciesHTML}</ul></div>`;
+                            const createdAtInfo = mob.createdAt ? ` (Início: ${new Date(mob.createdAt).toLocaleDateString('pt-BR')})` : '';
+                            const pendenciesHTML = mob.pendencies.map(p => {
+                                const pendencyDateInfo = p.pendencyDate ? ` (em ${p.pendencyDate})` : '';
+                                return `<li class="flex items-start text-sm"><input type="checkbox" class="report-item-checkbox mt-1 mr-3 rounded" data-type="rejected" data-mobilization-name="${mob.mobilizationName}" data-doc-name="${p.docName}" data-issue="${p.issue}" data-original-forecast="${mob.originalForecast}" data-created-at="${mob.createdAt || ''}" data-pendency-date="${p.pendencyDate || ''}"><span><b>${p.docName}:</b> ${p.issue}${pendencyDateInfo}</span></li>`
+                            }).join('');
+                            companyContent += `<div class="mt-2"><h5 class="font-semibold">${mob.mobilizationName}${createdAtInfo}</h5><ul class="mt-1 space-y-1 ml-7">${pendenciesHTML}</ul></div>`;
                         });
                     }
                     companyContent += `<div class="mt-6 pt-4 border-t border-[--border-color] flex space-x-2"><button data-company-name="${company.name}" class="generate-manual-message-btn w-full bg-gray-600 text-white px-4 py-2 rounded-md font-medium hover:bg-gray-700">Gerar Mensagem Detalhada</button><button data-company-name="${company.name}" class="generate-ai-message-btn w-full bg-[--accent-color] text-white px-4 py-2 rounded-md font-medium hover:bg-[--accent-hover] flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>Gerar Mensagem Resumida</button></div></div>`;
@@ -658,10 +651,10 @@
                 }
 
                 const approvedHTML = companiesToDisplay.filter(c => !c.hasPending).map(company => {
-                    return `<div class="report-company-card p-4 border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 rounded-lg shadow-sm flex justify-between items-center">
+                    return `<div class="report-company-card p-4 border border-green-300 dark:border-green-700 bg-green-100 dark:bg-green-900/30 rounded-lg shadow-sm flex justify-between items-center">
                                 <div>
                                     <h3 class="text-lg font-bold text-green-800 dark:text-green-300">${company.name}</h3>
-                                    <p class="text-sm text-green-600 dark:text-green-400">Todos os documentos aprovados.</p>
+                                    <p class="text-sm text-green-700 dark:text-green-400">Todos os documentos aprovados.</p>
                                 </div>
                                 <button data-company-name="${company.name}" class="generate-approval-message-btn bg-green-600 text-white px-4 py-2 rounded-md font-medium hover:bg-green-700">
                                     Gerar Mensagem de Aprovação
@@ -748,47 +741,108 @@
         function printReport() { window.print(); }
         
         function generateSummaryMessage(companyName, checkedItems) {
-            const rejectedDocCounts = {};
-            const awaitingDocCounts = {};
+            const rejectedDocsInfo = {};
+            const awaitingDocsInfo = {};
             let hasRejected = false;
             let hasAwaiting = false;
+
+            const parseDate = (dateStr) => {
+                if (!dateStr) return null;
+                const parts = dateStr.split('/');
+                if (parts.length !== 3) return null;
+                return new Date(parts[2], parts[1] - 1, parts[0]);
+            };
 
             checkedItems.forEach(item => {
                 const docName = item.dataset.docName;
                 if (item.dataset.type === 'rejected') {
                     hasRejected = true;
-                    rejectedDocCounts[docName] = (rejectedDocCounts[docName] || 0) + 1;
+                    const pendencyDate = item.dataset.pendencyDate;
+
+                    if (!rejectedDocsInfo[docName]) {
+                        rejectedDocsInfo[docName] = { count: 1, lastDate: pendencyDate };
+                    } else {
+                        rejectedDocsInfo[docName].count++;
+                        const existingDate = parseDate(rejectedDocsInfo[docName].lastDate);
+                        const newDate = parseDate(pendencyDate);
+                        
+                        if (newDate && (!existingDate || newDate > existingDate)) {
+                            rejectedDocsInfo[docName].lastDate = pendencyDate;
+                        }
+                    }
                 } else if (item.dataset.type === 'awaiting') {
                     hasAwaiting = true;
-                    awaitingDocCounts[docName] = (awaitingDocCounts[docName] || 0) + 1;
+                    const lastModified = item.dataset.lastModified;
+
+                    if (!awaitingDocsInfo[docName]) {
+                        awaitingDocsInfo[docName] = { count: 1, lastDate: lastModified };
+                    } else {
+                        awaitingDocsInfo[docName].count++;
+                        const existingDate = new Date(awaitingDocsInfo[docName].lastDate || 0);
+                        const newDate = new Date(lastModified || 0);
+
+                        if (newDate > existingDate) {
+                            awaitingDocsInfo[docName].lastDate = lastModified;
+                        }
+                    }
                 }
             });
 
+            const company = allCompaniesCache.find(c => c.name === companyName);
+            let totalCollaborators = 0;
+            let approvedCollaboratorCount = 0;
+
+            if (company) {
+                 const companyActiveMobilizations = allMobilizations.filter(mob => 
+                    mob.companyId === company.id && 
+                    mob.status !== 'inactive' && 
+                    mob.type === 'collaborator'
+                );
+                totalCollaborators = companyActiveMobilizations.length;
+
+                companyActiveMobilizations.forEach(mob => {
+                    const relevantDocs = Object.values(mob.documents).filter(d => d.initialDate && d.initialDate.toLowerCase() !== 'n/a');
+                    if (relevantDocs.length > 0 && relevantDocs.every(d => d.status === 'approved')) {
+                        approvedCollaboratorCount++;
+                    }
+                });
+            }
+
+
             if (!hasRejected && !hasAwaiting) {
-                return "Nenhum item com pendência ou aguardando análise foi selecionado. Selecione os itens para gerar o resumo.";
+                return "Nenhum item com pendência ou aguardando análise foi selecionado.";
             }
 
             let message = `📋 *Status da Mobilização - ${companyName}*\n\n`;
+            
+            message += `👥 *Resumo de Colaboradores Ativos:*\n`;
+            message += `Total Cadastrado: *${totalCollaborators}*\n`;
+            message += `Total Aprovado: *${approvedCollaboratorCount}*\n\n`;
+            message += "--------------------------------------\n\n";
 
             if (hasRejected) {
                 message += "🚨 *Pendências Encontradas*\n";
                 message += "Identificamos os seguintes documentos que precisam de correção:\n\n";
-                for (const docName in rejectedDocCounts) {
-                    const count = rejectedDocCounts[docName];
-                    message += `➡️ *${count}x* ${docName}\n`;
+                for (const docName in rejectedDocsInfo) {
+                    const info = rejectedDocsInfo[docName];
+                    const dateInfo = info.lastDate ? ` (Última atualização: ${info.lastDate})` : '';
+                    message += `➡️ *${info.count}x* ${docName}${dateInfo}\n`;
                 }
                 message += `\nA nova previsão para *reanálise* após o envio das correções é *${calculateReanalysisDate()}*.\n\n`;
             }
 
             if (hasAwaiting) {
                 if (hasRejected) {
-                     message += "--------------------------------------\n\n";
+                    message += "--------------------------------------\n\n";
                 }
                 message += "⏳ *Aguardando Análise*\n";
                 message += "Os seguintes documentos estão na fila para análise:\n\n";
-                for (const docName in awaitingDocCounts) {
-                    const count = awaitingDocCounts[docName];
-                    message += `➡️ *${count}x* ${docName}\n`;
+                for (const docName in awaitingDocsInfo) {
+                    const info = awaitingDocsInfo[docName];
+                    const forecastDate = calculateForecastFromDate(info.lastDate);
+                    const lastUpdateFormatted = info.lastDate ? new Date(info.lastDate).toLocaleDateString('pt-BR') : 'N/A';
+                    const dateInfo = ` (Última atualização: ${lastUpdateFormatted} - Previsão: ${forecastDate})`;
+                    message += `➡️ *${info.count}x* ${docName}${dateInfo}\n`;
                 }
                 message += "\n";
             }
@@ -833,14 +887,14 @@
                 if (hasRejected) {
                     message += "\n  🚨 *Pendências Encontradas:*\n";
                     for (const docName in rejected) {
-                        message += `    ➡️ *${rejected[docName]}x* ${docName}\n`;
+                        message += `     ➡️ *${rejected[docName]}x* ${docName}\n`;
                     }
                 }
 
                 if (hasAwaiting) {
                     message += "\n  ⏳ *Aguardando Análise:*\n";
                     for (const docName in awaiting) {
-                        message += `    ➡️ *${awaiting[docName]}x* ${docName}\n`;
+                        message += `     ➡️ *${awaiting[docName]}x* ${docName}\n`;
                     }
                 }
             }
@@ -858,8 +912,8 @@
         function listenForMobilizationBatches(companyId) { mobilizationBatchListEl.innerHTML = '<div class="loader"></div>'; const q = query(collection(db, "mobilizationBatches"), where("companyId", "==", companyId)); unsubscribeMobilizationBatches = onSnapshot(q, async (batchSnapshot) => { const batchesData = batchSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); batchesData.sort((a, b) => b.date.localeCompare(a.date)); const mobCounts = {}; const mobilizationsQuery = query(collection(db, "mobilizations"), where("companyId", "==", companyId)); const mobSnapshot = await getDocs(mobilizationsQuery); mobSnapshot.forEach(doc => { const mob = doc.data(); mobCounts[mob.batchId] = (mobCounts[mob.batchId] || 0) + 1; }); batchesData.forEach(batch => batch.mobilizationCount = mobCounts[batch.id] || 0); renderMobilizationBatches(batchesData); }, (error) => { console.error("Erro ao ouvir lotes:", error); mobilizationBatchListEl.innerHTML = '<p class="text-red-500">Falha ao carregar lotes.</p>'; }); }
         function listenForMobilizations(batchId) { mobilizationListEl.innerHTML = '<div class="loader"></div>'; const q = query(collection(db, "mobilizations"), where("batchId", "==", batchId)); unsubscribeMobilizations = onSnapshot(q, (querySnapshot) => { const mobilizationsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderMobilizations(mobilizationsData); }, (error) => { console.error("Erro ao ouvir mobilizações:", error); mobilizationListEl.innerHTML = '<p class="text-red-500">Falha ao carregar mobilizações.</p>'; }); }
         async function addCompany(e) { e.preventDefault(); const form = e.target; const newCompany = { name: form.companyName.value.trim(), contractNumber: form.contractNumber.value.trim() }; if (!newCompany.name || !newCompany.contractNumber) return showToast("Preencha todos os campos.", "error"); try { await addDoc(collection(db, "companies"), newCompany); showToast("Empresa adicionada com sucesso!"); form.reset(); handleTabClick('empresas'); } catch (error) { console.error("Erro ao adicionar empresa: ", error); showToast("Erro ao salvar empresa.", "error"); } }
-        async function addMobilizationBatch(e) { e.preventDefault(); const form = e.target; const newBatch = { companyId: currentCompanyId, date: form.batchDate.value, description: form.batchDescription.value.trim(), type: form.batchType.value }; if (!newBatch.date) return showToast("A data é obrigatória.", "error"); try { const batchRef = await addDoc(collection(db, "mobilizationBatches"), newBatch); showToast("Lote criado com sucesso!"); addBatchModal.classList.add('hidden'); form.reset(); if (newBatch.type === 'company') { const documents = {}; companyDocsList.forEach(docName => { documents[docName] = { initialDate: 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }; }); await addDoc(collection(db, "mobilizations"), { companyId: currentCompanyId, batchId: batchRef.id, name: 'Documentação da Empresa', type: 'company', documents, analysisForecastDate: 'N/A', lastModified: new Date().toISOString() }); } } catch (error) { console.error("Erro ao criar lote:", error); showToast("Erro ao criar lote.", "error"); } }
-        async function addMobilization(e) { e.preventDefault(); const form = e.target; const collaboratorName = form.collaboratorName.value.trim(); if (!collaboratorName) return showToast('Nome do colaborador é obrigatório.', 'error'); const documents = {}, docDates = []; document.querySelectorAll('.document-input').forEach(input => { const date = input.value.trim() || 'N/A'; docDates.push(date); documents[input.dataset.docName] = { initialDate: date, status: 'pending', issue: '', correctionDate: '', approvalDate: '' }; }); try { await addDoc(collection(db, "mobilizations"), { companyId: currentCompanyId, batchId: currentBatchId, name: collaboratorName, type: 'collaborator', documents, analysisForecastDate: calculateForecastDate(docDates), status: 'active', lastModified: new Date().toISOString() }); showToast("Colaborador adicionado com sucesso!"); form.reset(); } catch (error) { console.error("Erro ao adicionar mobilização: ", error); showToast("Erro ao salvar colaborador.", "error"); } }
+        async function addMobilizationBatch(e) { e.preventDefault(); const form = e.target; const newBatch = { companyId: currentCompanyId, date: form.batchDate.value, description: form.batchDescription.value.trim(), type: form.batchType.value }; if (!newBatch.date) return showToast("A data é obrigatória.", "error"); try { const batchRef = await addDoc(collection(db, "mobilizationBatches"), newBatch); showToast("Lote criado com sucesso!"); addBatchModal.classList.add('hidden'); form.reset(); if (newBatch.type === 'company') { const documents = {}; companyDocsList.forEach(docName => { documents[docName] = { initialDate: 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }; }); await addDoc(collection(db, "mobilizations"), { companyId: currentCompanyId, batchId: batchRef.id, name: 'Documentação da Empresa', type: 'company', documents, analysisForecastDate: 'N/A', createdAt: new Date().toISOString(), lastModified: new Date().toISOString() }); } } catch (error) { console.error("Erro ao criar lote:", error); showToast("Erro ao criar lote.", "error"); } }
+        async function addMobilization(e) { e.preventDefault(); const form = e.target; const collaboratorName = form.collaboratorName.value.trim(); if (!collaboratorName) return showToast('Nome do colaborador é obrigatório.', 'error'); const documents = {}, docDates = []; document.querySelectorAll('.document-input').forEach(input => { const date = input.value.trim() || 'N/A'; docDates.push(date); documents[input.dataset.docName] = { initialDate: date, status: 'pending', issue: '', correctionDate: '', approvalDate: '' }; }); try { await addDoc(collection(db, "mobilizations"), { companyId: currentCompanyId, batchId: currentBatchId, name: collaboratorName, type: 'collaborator', documents, analysisForecastDate: calculateForecastDate(docDates), status: 'active', createdAt: new Date().toISOString(), lastModified: new Date().toISOString() }); showToast("Colaborador adicionado com sucesso!"); form.reset(); } catch (error) { console.error("Erro ao adicionar mobilização: ", error); showToast("Erro ao salvar colaborador.", "error"); } }
         async function updateAnalysis(e) { e.preventDefault(); if (!currentMobilizationId) return; try { const mobilizationRef = doc(db, "mobilizations", currentMobilizationId); const q = query(collection(db, "mobilizations"), where("__name__", "==", currentMobilizationId)); const mobDoc = (await getDocs(q)).docs[0]; const currentData = mobDoc.data(); const finalDocuments = { ...currentData.documents }; document.querySelectorAll('.analysis-card').forEach(card => { const docName = card.dataset.docName; if (finalDocuments[docName]) { const previousStatus = currentData.documents[docName].status; const newStatus = card.querySelector('.analysis-status').value; const currentIssue = currentData.documents[docName].issue || ''; const currentCorrectionDate = currentData.documents[docName].correctionDate || ''; if (previousStatus === 'rejected' && newStatus !== 'rejected') { const historyEntry = { issue: currentIssue, correctionDate: currentCorrectionDate, rejectionDate: currentData.documents[docName].lastAnalysisDate || new Date().toLocaleDateString('pt-BR') }; if (!finalDocuments[docName].rejectionHistory) { finalDocuments[docName].rejectionHistory = []; } finalDocuments[docName].rejectionHistory.push(historyEntry); } finalDocuments[docName].status = newStatus; finalDocuments[docName].issue = card.querySelector('.analysis-issue')?.value.trim() || ''; finalDocuments[docName].correctionDate = card.querySelector('.analysis-correction-date')?.value.trim() || ''; finalDocuments[docName].approvalDate = card.querySelector('.analysis-approval-date')?.value.trim() || ''; finalDocuments[docName].lastAnalysisDate = new Date().toLocaleDateString('pt-BR'); } }); await updateDoc(mobilizationRef, { documents: finalDocuments, lastModified: new Date().toISOString() }); showToast("Análise salva com sucesso!"); switchView('list'); } catch (error) { console.error("Erro ao atualizar análise: ", error); showToast("Erro ao salvar análise.", "error"); } }
         async function handleUpdateMobilization(e) { e.preventDefault(); if (!currentMobilizationId) return; try { const mobilizationRef = doc(db, "mobilizations", currentMobilizationId); const q = query(collection(db, "mobilizations"), where("__name__", "==", currentMobilizationId)); const mobDoc = (await getDocs(q)).docs[0]; const currentData = mobDoc.data(); const finalDocuments = { ...currentData.documents }; const docDates = []; document.querySelectorAll('.document-input-edit').forEach(input => { const docName = input.dataset.docName; const date = input.value.trim() || 'N/A'; docDates.push(date); if(finalDocuments[docName]) { finalDocuments[docName].initialDate = date; } else { finalDocuments[docName] = { initialDate: date, status: 'pending', issue: '', correctionDate: '', approvalDate: '' }; } }); const newForecastDate = calculateForecastDate(docDates); await updateDoc(mobilizationRef, { documents: finalDocuments, analysisForecastDate: newForecastDate, lastModified: new Date().toISOString() }); showToast("Mobilização atualizada com sucesso!"); switchView('list'); } catch (error) { console.error("Error updating mobilization:", error); showToast("Erro ao salvar as alterações.", "error"); } }
         async function handleCollaboratorStatusChange(mobilizationId, newStatus) { try { const mobilizationRef = doc(db, "mobilizations", mobilizationId); await updateDoc(mobilizationRef, { status: newStatus, lastModified: new Date().toISOString() }); showToast(`Colaborador marcado como ${newStatus === 'inactive' ? 'inativo' : 'ativo'}.`); } catch (error) { console.error("Erro ao atualizar status do colaborador:", error); showToast("Falha ao atualizar o status.", "error"); } }
@@ -869,7 +923,7 @@
         function parseFile(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (event) => { try { if (file.name.endsWith('.csv')) { const text = event.target.result; Papa.parse(text, { complete: (results) => resolve(extractDataFromRows(results.data, file.name)), error: (err) => reject(err), }); } else { const workbook = XLSX.read(event.target.result, { type: 'binary', cellDates: true }); const sheetName = workbook.SheetNames.find(name => !name.toLowerCase().includes('planilha2')) || workbook.SheetNames[0]; const worksheet = workbook.Sheets[sheetName]; const dataGrid = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null, raw: false }); const merges = worksheet['!merges'] || []; merges.forEach(merge => { const { s, e } = merge; const value = dataGrid[s.r] ? dataGrid[s.r][s.c] : null; if (value === null) return; for (let R = s.r; R <= e.r; ++R) { for (let C = s.c; C <= e.c; ++C) { if (!dataGrid[R]) dataGrid[R] = []; dataGrid[R][C] = value; } } }); resolve(extractDataFromRows(dataGrid, file.name)); } } catch(err) { reject(err); } }; if (file.name.endsWith('.csv')) { reader.readAsText(file); } else { reader.readAsBinaryString(file); } }); }
         function extractDataFromRows(data, fileName) { const parsed = { companyName: '', contractNumber: '', companyDocs: {}, collaborators: [] }; const nameMatch = fileName.match(/(\d+)\s(.+?)(?:\s-\s.*)?\.(csv|xlsx|xls)/i); if (nameMatch) { parsed.contractNumber = nameMatch[1]; parsed.companyName = nameMatch[2].replace(/_/g, ' ').trim(); } let collaboratorHeaderIndex = -1; let headers = []; data.forEach((row, rowIndex) => { if (!row || row.length === 0 || row.every(cell => cell === null || String(cell).trim() === '')) return; const firstCell = String(row[0] || '').trim(); if (companyDocsList.includes(firstCell)) { parsed.companyDocs[firstCell] = formatImportDate(row[2] || 'N/A'); } if (firstCell.toLowerCase().includes('colaborador')) { collaboratorHeaderIndex = rowIndex; headers = row.map(h => String(h || '').trim()); } if (collaboratorHeaderIndex !== -1 && rowIndex > collaboratorHeaderIndex + 1) { const collaboratorName = String(row[0] || '').trim(); if (collaboratorName && collaboratorName.length > 2 && !collaboratorName.toLowerCase().includes('exemplo')) { const collaborator = { name: collaboratorName, documents: {} }; headers.forEach((header, colIndex) => { if (colIndex > 0 && header) { const matchingDoc = collaboratorDocsList.find(doc => header.toLowerCase().includes(doc.split(' ')[0].toLowerCase().replace('+',''))); if(matchingDoc) { collaborator.documents[matchingDoc] = formatImportDate(row[colIndex] || 'N/A'); } } }); if(Object.keys(collaborator.documents).length > 0) { parsed.collaborators.push(collaborator); } } } }); return parsed; }
         async function renderImportPreview(allParsedData) { importPreviewArea.innerHTML = ''; parsedDataForImport = allParsedData; const companiesOptions = allCompaniesCache.map(c => `<option value="${c.id}" data-contract="${c.contractNumber}">${c.name}</option>`).join(''); allParsedData.forEach((data, index) => { const card = document.createElement('div'); card.className = 'bg-white p-4 rounded-lg shadow-sm border'; card.dataset.index = index; const companyDocsHTML = Object.entries(data.companyDocs).map(([name, date]) => `<div class="flex justify-between text-sm"><span class="text-gray-600">${name}:</span> <span class="font-medium">${date}</span></div>`).join(''); const collaboratorsHTML = data.collaborators.map(c => `<tr class="border-b"><td class="py-2 pr-2">${c.name}</td><td class="py-2 pl-2 text-right">${Object.values(c.documents).filter(d => d !== 'N/A').length} docs</td></tr>`).join(''); const matchedCompany = allCompaniesCache.find(c => c.contractNumber === data.contractNumber); card.innerHTML = `<h3 class="font-bold text-lg mb-4">Verificação do Arquivo: ${data.fileName}</h3><div><label class="block text-sm font-medium">Associar à Empresa</label><select class="import-company-select mt-1 block w-full border-gray-300 rounded-md"><option value="new">-- Criar Nova Empresa --</option>${companiesOptions}</select></div><div class="import-new-company-fields grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"><div><label class="block text-sm font-medium">Nome da Empresa</label><input type="text" value="${data.companyName}" class="import-company-name mt-1 block w-full border-gray-300 rounded-md"></div><div><label class="block text-sm font-medium">Nº do Contrato</label><input type="text" value="${data.contractNumber}" class="import-contract-number mt-1 block w-full border-gray-300 rounded-md"></div></div><div class="mt-4"><h4 class="font-semibold">Documentos da Empresa Encontrados:</h4><div class="mt-2 space-y-1">${companyDocsHTML || '<p class="text-sm text-gray-500">Nenhum</p>'}</div></div><div class="mt-4"><h4 class="font-semibold">Colaboradores Encontrados (${data.collaborators.length}):</h4><div class="mt-2 border rounded-md max-h-48 overflow-y-auto p-2"><table class="w-full text-sm"><tbody>${collaboratorsHTML || '<tr><td>Nenhum</td></tr>'}</tbody></table></div></div>`; importPreviewArea.appendChild(card); const select = card.querySelector('.import-company-select'); if (matchedCompany) { select.value = matchedCompany.id; } select.dispatchEvent(new Event('change')); }); importActions.classList.toggle('hidden', allParsedData.length === 0); }
-        async function handleImportData() { importFinalBtn.disabled = true; importFinalBtn.textContent = 'Importando...'; try { document.querySelectorAll('#import-preview-area > div').forEach((card, index) => { const select = card.querySelector('.import-company-select'); const selectedOption = select.options[select.selectedIndex]; parsedDataForImport[index].selectedCompanyId = select.value === 'new' ? null : select.value; if (select.value === 'new') { parsedDataForImport[index].companyName = card.querySelector('.import-company-name').value; parsedDataForImport[index].contractNumber = card.querySelector('.import-contract-number').value; } else { parsedDataForImport[index].companyName = selectedOption.text; parsedDataForImport[index].contractNumber = selectedOption.dataset.contract; } }); for (const data of parsedDataForImport) { if (!data.companyName || !data.contractNumber) continue; let companyId = data.selectedCompanyId; if (!companyId) { const q = query(collection(db, "companies"), where("contractNumber", "==", data.contractNumber)); const existingCompany = await getDocs(q); if (existingCompany.empty) { const newCompanyRef = await addDoc(collection(db, "companies"), { name: data.companyName, contractNumber: data.contractNumber }); companyId = newCompanyRef.id; } else { companyId = existingCompany.docs[0].id; } } const today = new Date().toISOString().split('T')[0]; const batch = writeBatch(db); if (Object.keys(data.companyDocs).length > 0) { const companyBatchRef = doc(collection(db, "mobilizationBatches")); batch.set(companyBatchRef, { companyId, date: today, description: `Docs da empresa importados de ${data.fileName}`, type: 'company' }); const companyMobRef = doc(collection(db, "mobilizations")); const documents = {}; companyDocsList.forEach(docName => { documents[docName] = { initialDate: data.companyDocs[docName] || 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }}); batch.set(companyMobRef, { companyId, batchId: companyBatchRef.id, name: 'Documentação da Empresa', type: 'company', documents, analysisForecastDate: calculateForecastDate(Object.values(documents).map(d=>d.initialDate)), lastModified: new Date().toISOString() }); } if (data.collaborators.length > 0) { const collabBatchRef = doc(collection(db, "mobilizationBatches")); batch.set(collabBatchRef, { companyId, date: today, description: `Colaboradores importados de ${data.fileName}`, type: 'collaborators' }); data.collaborators.forEach(collab => { const collabMobRef = doc(collection(db, "mobilizations")); const documents = {}; collaboratorDocsList.forEach(docName => { documents[docName] = { initialDate: collab.documents[docName] || 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }}); batch.set(collabMobRef, { companyId, batchId: collabBatchRef.id, name: collab.name, type: 'collaborator', documents, analysisForecastDate: calculateForecastDate(Object.values(documents).map(d=>d.initialDate)), status: 'active', lastModified: new Date().toISOString() }); }); } await batch.commit(); showToast(`Dados para '${data.companyName}' importados com sucesso!`); } importPreviewArea.innerHTML = ''; importActions.classList.add('hidden'); fileInput.value = ''; handleTabClick('dashboard'); } catch (error) { console.error("Erro na importação final:", error); showToast("Ocorreu um erro durante a importação.", "error"); } finally { importFinalBtn.disabled = false; importFinalBtn.textContent = 'Importar Dados Verificados'; } }
+        async function handleImportData() { importFinalBtn.disabled = true; importFinalBtn.textContent = 'Importando...'; try { document.querySelectorAll('#import-preview-area > div').forEach((card, index) => { const select = card.querySelector('.import-company-select'); const selectedOption = select.options[select.selectedIndex]; parsedDataForImport[index].selectedCompanyId = select.value === 'new' ? null : select.value; if (select.value === 'new') { parsedDataForImport[index].companyName = card.querySelector('.import-company-name').value; parsedDataForImport[index].contractNumber = card.querySelector('.import-contract-number').value; } else { parsedDataForImport[index].companyName = selectedOption.text; parsedDataForImport[index].contractNumber = selectedOption.dataset.contract; } }); for (const data of parsedDataForImport) { if (!data.companyName || !data.contractNumber) continue; let companyId = data.selectedCompanyId; if (!companyId) { const q = query(collection(db, "companies"), where("contractNumber", "==", data.contractNumber)); const existingCompany = await getDocs(q); if (existingCompany.empty) { const newCompanyRef = await addDoc(collection(db, "companies"), { name: data.companyName, contractNumber: data.contractNumber }); companyId = newCompanyRef.id; } else { companyId = existingCompany.docs[0].id; } } const today = new Date().toISOString().split('T')[0]; const batch = writeBatch(db); if (Object.keys(data.companyDocs).length > 0) { const companyBatchRef = doc(collection(db, "mobilizationBatches")); batch.set(companyBatchRef, { companyId, date: today, description: `Docs da empresa importados de ${data.fileName}`, type: 'company' }); const companyMobRef = doc(collection(db, "mobilizations")); const documents = {}; companyDocsList.forEach(docName => { documents[docName] = { initialDate: data.companyDocs[docName] || 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }}); batch.set(companyMobRef, { companyId, batchId: companyBatchRef.id, name: 'Documentação da Empresa', type: 'company', documents, analysisForecastDate: calculateForecastDate(Object.values(documents).map(d=>d.initialDate)), createdAt: new Date().toISOString(), lastModified: new Date().toISOString() }); } if (data.collaborators.length > 0) { const collabBatchRef = doc(collection(db, "mobilizationBatches")); batch.set(collabBatchRef, { companyId, date: today, description: `Colaboradores importados de ${data.fileName}`, type: 'collaborators' }); data.collaborators.forEach(collab => { const collabMobRef = doc(collection(db, "mobilizations")); const documents = {}; collaboratorDocsList.forEach(docName => { documents[docName] = { initialDate: collab.documents[docName] || 'N/A', status: 'pending', issue: '', correctionDate: '', approvalDate: '' }}); batch.set(collabMobRef, { companyId, batchId: collabBatchRef.id, name: collab.name, type: 'collaborator', documents, analysisForecastDate: calculateForecastDate(Object.values(documents).map(d=>d.initialDate)), status: 'active', createdAt: new Date().toISOString(), lastModified: new Date().toISOString() }); }); } await batch.commit(); showToast(`Dados para '${data.companyName}' importados com sucesso!`); } importPreviewArea.innerHTML = ''; importActions.classList.add('hidden'); fileInput.value = ''; handleTabClick('dashboard'); } catch (error) { console.error("Erro na importação final:", error); showToast("Ocorreu um erro durante a importação.", "error"); } finally { importFinalBtn.disabled = false; importFinalBtn.textContent = 'Importar Dados Verificados'; } }
         function exportTemplateCSV() { const companyHeader = ["Documentação empresa", "", "Data de Carregamento"]; const companyRows = companyDocsList.map(doc => [doc, "", ""]); const collaboratorHeader = ["Colaborador", ...collaboratorDocsList]; const collaboratorExampleRow = ["Exemplo Nome Sobrenome", ...collaboratorDocsList.map(() => "dd/mm/aaaa ou N/A")]; const csvData = [ companyHeader, ...companyRows, [], [], collaboratorHeader, collaboratorExampleRow ]; const csv = Papa.unparse(csvData); const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); const url = URL.createObjectURL(blob); link.setAttribute("href", url); link.setAttribute("download", "modelo_importacao.csv"); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -913,7 +967,7 @@
             mobilizationBatchListEl.addEventListener('click', e => { const viewBtn = e.target.closest('.view-mobilizations-btn'); if (viewBtn) { const { id, date, description, type } = viewBtn.dataset; currentBatchId = id; document.getElementById('list-batch-date').textContent = date; document.getElementById('list-batch-description').textContent = description || 'Sem descrição'; const addFormContainer = document.getElementById('add-mobilization-form-container'); if (type === 'company') { addFormContainer.classList.add('hidden'); } else { addFormContainer.classList.remove('hidden'); updateDocumentListUI('collaborator'); } listenForMobilizations(id); switchView('list'); } const deleteBtn = e.target.closest('.delete-batch-btn'); if (deleteBtn) requestDeleteItem('batch', deleteBtn.dataset.id, currentCompanyId); });
             mobilizationListEl.addEventListener('click', async e => { const analyzeBtn = e.target.closest('.analyze-mobilization-btn'); if (analyzeBtn) { const q = query(collection(db, "mobilizations"), where("__name__", "==", analyzeBtn.dataset.id)); const mobDoc = (await getDocs(q)).docs[0]; renderAnalysisView({id: mobDoc.id, ...mobDoc.data()}); } const editBtn = e.target.closest('.edit-mobilization-btn'); if(editBtn) { renderEditMobilizationView(editBtn.dataset.id); } const deleteBtn = e.target.closest('.delete-mobilization-btn'); if (deleteBtn) requestDeleteItem('mobilization', deleteBtn.dataset.id, currentBatchId); const deactivateCheckbox = e.target.closest('.deactivate-collaborator-checkbox'); if (deactivateCheckbox) { const mobilizationId = deactivateCheckbox.dataset.id; const newStatus = deactivateCheckbox.checked ? 'inactive' : 'active'; handleCollaboratorStatusChange(mobilizationId, newStatus); } });
             document.getElementById('analysis-document-list').addEventListener('change', e => { if (e.target.classList.contains('analysis-status')) { const card = e.target.closest('.analysis-card'); card.querySelector('.rejection-fields').classList.toggle('hidden', e.target.value !== 'rejected'); card.querySelector('.approval-fields').classList.toggle('hidden', e.target.value !== 'approved'); card.className = `analysis-card bg-white p-4 rounded-lg shadow-sm border-l-4 ${getStatusColorClass(e.target.value)}`; } });
-            reportContentEl.addEventListener('click', e => { const manualBtn = e.target.closest('.generate-manual-message-btn'); const aiBtn = e.target.closest('.generate-ai-message-btn'); const approvalBtn = e.target.closest('.generate-approval-message-btn'); const selectAllCheckbox = e.target.closest('.select-all-checkbox'); if (selectAllCheckbox) { const card = selectAllCheckbox.closest('.report-company-card'); card.querySelectorAll('.report-item-checkbox').forEach(checkbox => checkbox.checked = selectAllCheckbox.checked); return; } const messageTextarea = document.getElementById('generated-message-textarea'); if (approvalBtn) { messageTextarea.value = generateApprovalMessage(approvalBtn.dataset.companyName); messageModal.classList.remove('hidden'); return; } if (manualBtn || aiBtn) { const companyCard = (manualBtn || aiBtn).closest('.report-company-card'); const checkedItems = companyCard.querySelectorAll('.report-item-checkbox:checked'); if (checkedItems.length === 0) return showToast("Selecione ao menos um item.", "error"); messageTextarea.value = "Gerando mensagem..."; messageModal.classList.remove('hidden'); if (aiBtn) { messageTextarea.value = generateSummaryMessage(aiBtn.dataset.companyName, checkedItems); } else { const rejectedItems = {}; const awaitingItems = {}; checkedItems.forEach(item => { const { type, mobilizationName, docName, issue, originalForecast } = item.dataset; if (type === 'rejected') { if (!rejectedItems[mobilizationName]) rejectedItems[mobilizationName] = { docs: [], originalForecast }; rejectedItems[mobilizationName].docs.push({ docName, issue }); } else if (type === 'awaiting') { if (!awaitingItems[mobilizationName]) awaitingItems[mobilizationName] = { docs: [] }; awaitingItems[mobilizationName].docs.push({ docName }); } }); let message = `*Informativo - ${manualBtn.dataset.companyName}*\n`; if (Object.keys(rejectedItems).length > 0) { message += "\n*RELATÓRIO DE PENDÊNCIAS*\n"; for (const mobName in rejectedItems) { message += `\n*Mobilização: ${mobName}*\n_Previsão Original: ${rejectedItems[mobName].originalForecast}_\n`; rejectedItems[mobName].docs.forEach(p => { message += `• ${p.docName}: ${p.issue}\n`; }); } message += `\nA nova previsão para *reanálise* após o envio é *${calculateReanalysisDate()}*.`; } if (Object.keys(awaitingItems).length > 0) { message += "\n\n*DOCUMENTOS AGUARDANDO ANÁLISE*\n"; for (const mobName in awaitingItems) { message += `\n*Mobilização: ${mobName}*\n`; awaitingItems[mobName].docs.forEach(p => { message += `• ${p.docName}\n`; }); } } messageTextarea.value = message; } } });
+            reportContentEl.addEventListener('click', e => { const manualBtn = e.target.closest('.generate-manual-message-btn'); const aiBtn = e.target.closest('.generate-ai-message-btn'); const approvalBtn = e.target.closest('.generate-approval-message-btn'); const selectAllCheckbox = e.target.closest('.select-all-checkbox'); if (selectAllCheckbox) { const card = selectAllCheckbox.closest('.report-company-card'); card.querySelectorAll('.report-item-checkbox').forEach(checkbox => checkbox.checked = selectAllCheckbox.checked); return; } const messageTextarea = document.getElementById('generated-message-textarea'); if (approvalBtn) { messageTextarea.value = generateApprovalMessage(approvalBtn.dataset.companyName); messageModal.classList.remove('hidden'); return; } if (manualBtn || aiBtn) { const companyCard = (manualBtn || aiBtn).closest('.report-company-card'); const checkedItems = Array.from(companyCard.querySelectorAll('.report-item-checkbox:checked')); if (checkedItems.length === 0) return showToast("Selecione ao menos um item.", "error"); messageTextarea.value = "Gerando mensagem..."; messageModal.classList.remove('hidden'); if (aiBtn) { messageTextarea.value = generateSummaryMessage(aiBtn.dataset.companyName, checkedItems); } else { const rejectedItems = {}; const awaitingItems = {}; checkedItems.forEach(item => { const { type, mobilizationName, docName, issue, originalForecast, createdAt, pendencyDate, lastModified } = item.dataset; if (type === 'rejected') { if (!rejectedItems[mobilizationName]) rejectedItems[mobilizationName] = { docs: [], originalForecast, createdAt }; rejectedItems[mobilizationName].docs.push({ docName, issue, pendencyDate }); } else if (type === 'awaiting') { if (!awaitingItems[mobilizationName]) { awaitingItems[mobilizationName] = { docs: [], createdAt, lastModified }; } const currentLatest = new Date(awaitingItems[mobilizationName].lastModified || 0); const itemDate = new Date(lastModified || 0); if (itemDate > currentLatest) { awaitingItems[mobilizationName].lastModified = lastModified; } awaitingItems[mobilizationName].docs.push({ docName }); } }); let message = `*Informativo - ${manualBtn.dataset.companyName}*\n`; if (Object.keys(rejectedItems).length > 0) { message += "\n*RELATÓRIO DE PENDÊNCIAS*\n"; for (const mobName in rejectedItems) { const createdAtInfo = rejectedItems[mobName].createdAt ? ` (Início: ${new Date(rejectedItems[mobName].createdAt).toLocaleDateString('pt-BR')})` : ''; message += `\n*Mobilização: ${mobName}${createdAtInfo}*\n_Previsão Original: ${rejectedItems[mobName].originalForecast}_\n`; rejectedItems[mobName].docs.forEach(p => { const pendencyDateInfo = p.pendencyDate ? ` (identificada em ${p.pendencyDate})` : ''; message += `• ${p.docName}: ${p.issue}${pendencyDateInfo}\n`; }); } message += `\nA nova previsão para *reanálise* após o envio é *${calculateReanalysisDate()}*.`; } if (Object.keys(awaitingItems).length > 0) { message += "\n\n*DOCUMENTOS AGUARDANDO ANÁLISE*\n"; for (const mobName in awaitingItems) { const item = awaitingItems[mobName]; const lastUpdateDate = item.lastModified ? new Date(item.lastModified) : (item.createdAt ? new Date(item.createdAt) : new Date()); const forecastDate = calculateForecastFromDate(lastUpdateDate.toISOString()); const updateInfo = ` (Atualizado em: ${lastUpdateDate.toLocaleDateString('pt-BR')} - Previsão: ${forecastDate})`; message += `\n*Mobilização: ${mobName}*${updateInfo}\n`; item.docs.forEach(p => { message += `• ${p.docName}\n`; }); } } messageTextarea.value = message; } } });
             
             document.getElementById('generate-all-summary-btn').addEventListener('click', () => {
                 const checkedItems = document.querySelectorAll('#report-content .report-item-checkbox:checked');
@@ -958,6 +1012,4 @@
     </script>
 </body>
 </html>
-
-
 
